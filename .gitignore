@@ -1,0 +1,10 @@
+/build/
+/cmake-*/
+
+/.idea/*
+!/.idea/codeStyles/
+!/.idea/runConfigurations/
+!/.idea/cmake.xml
+
+/.vscode/*
+!/.vscode/settings.json
