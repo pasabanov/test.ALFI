@@ -209,10 +209,10 @@ namespace alfi::dist {
 	public:
 		ChebyshevStretched(size_t n, Number a, Number b) 
 			: Base<Number>(std::make_shared<ChebyshevStretchedImpl>(n, std::move(a), std::move(b))) {}
-	
+
 		const Number& stretched_a() const { return static_cast<ChebyshevStretchedImpl&>(*this->_impl).stretched_a; }
 		const Number& stretched_b() const { return static_cast<ChebyshevStretchedImpl&>(*this->_impl).stretched_b; }
-	
+
 	private:
 		class ChebyshevStretchedImpl final : public Base<Number>::BaseImpl {
 		public:
@@ -229,7 +229,7 @@ namespace alfi::dist {
 					stretched_b = this->b;
 				}
 			}
-	
+
 			virtual Number get(size_t index) const override {
 				if (this->n == 0)
 					return static_cast<Number>(NAN);
@@ -243,7 +243,7 @@ namespace alfi::dist {
 				x = (x + 1) * (stretched_b - stretched_a) / 2 + stretched_a;
 				return x;
 			}
-	
+
 			Number stretched_a;
 			Number stretched_b;
 		};
@@ -373,7 +373,7 @@ namespace alfi::dist {
 	public:
 		EllipseProj(size_t n, Number a, Number b, Number B)
 			: Base<Number>(std::make_shared<EllipseProjImpl>(n, std::move(a), std::move(b), std::move(B))) {}
-	
+
 		const Number& ratio() const { return static_cast<EllipseProjImpl&>(*this->_impl).ratio; }
 
 	private:
@@ -381,7 +381,7 @@ namespace alfi::dist {
 		public:
 			EllipseProjImpl(size_t n, Number a, Number b, Number B)
 				: Base<Number>::BaseImpl(Type::ELLIPSE_PROJECTION, n, std::move(a), std::move(b)), ratio(std::move(B)) {}
-			
+
 			virtual Number get(size_t index) const override {
 				if (this->n == 0)
 					return static_cast<Number>(NAN);
@@ -442,7 +442,7 @@ namespace alfi::dist {
 		const Number& steepness() const { return static_cast<SigmoidStretchedImpl&>(*this->_impl).steepness; }
 		const Number& stretched_a() const { return static_cast<SigmoidStretchedImpl&>(*this->_impl).stretched_a; }
 		const Number& stretched_b() const { return static_cast<SigmoidStretchedImpl&>(*this->_impl).stretched_b; }
-		
+
 	private:
 		class SigmoidStretchedImpl final : public Base<Number>::BaseImpl {
 		public:

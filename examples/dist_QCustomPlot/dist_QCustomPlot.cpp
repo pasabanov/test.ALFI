@@ -24,11 +24,11 @@ public:
 		_plot = new QCustomPlot();
 		_plot->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 		_plot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
-   
+
 		_control_panel = new QWidget();
 		// ReSharper disable once CppDFAMemoryLeak
 		QVBoxLayout* control_layout = new QVBoxLayout(_control_panel);
-		
+
 		_n_spin_box = create_spin_box<int, QSpinBox>(n_params);
 		_n_slider = create_slider<int, QSlider>(n_params);
 
