@@ -1,6 +1,6 @@
-#include <ALFI.h>
-
 #include <gtest/gtest.h>
+
+#include <ALFI.h>
 
 TEST(DistributionsTest, Iterators) {
 
