@@ -84,7 +84,7 @@ namespace alfi::poly {
 
 		void clear() { _coeffs.clear(); }
 
-		Number& at_degree(size_t deg) {
+		[[nodiscard]] Number& at_degree(size_t deg) {
 			reserve_degree(deg);
 			return _coeffs[degree() - deg];
 		}
