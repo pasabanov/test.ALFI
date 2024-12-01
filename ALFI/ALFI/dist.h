@@ -21,6 +21,74 @@ namespace alfi::dist {
 	};
 
 	template <typename Number = double>
+	class Distribution final {
+	public:
+
+		Number& operator[](size_t index) {
+			return _impl->points[index];
+		}
+		const Number& operator[](size_t index) const {
+			return _impl->points[index];
+		}
+
+		std::vector<Number>& points() & {
+			return _impl->points;
+		}
+		std::vector<Number> points() && {
+			return std::move(_impl->points);
+		}
+		const std::vector<Number>& points() const & {
+			return _impl->points;
+		}
+		std::vector<Number> points() const && {
+			return std::move(_impl->points);
+		}
+
+		using Iterator = typename std::vector<Number>::iterator;
+		using ConstIterator = typename std::vector<Number>::const_iterator;
+		using ReverseIterator = typename std::vector<Number>::reverse_iterator;
+		using ConstReverseIterator = typename std::vector<Number>::const_reverse_iterator;
+
+		Iterator begin() {
+			return points().begin();
+		}
+		Iterator end() {
+			return points().end();
+		}
+		ConstIterator begin() const {
+			return points().begin();
+		}
+		ConstIterator end() const {
+			return points().end();
+		}
+
+		ReverseIterator rbegin() {
+			return points().rbegin();
+		}
+		ReverseIterator rend() {
+			return points().rend();
+		}
+		ConstReverseIterator rbegin() const {
+			return points().rbegin();
+		}
+		ConstReverseIterator rend() const {
+			return points().rend();
+		}
+
+	private:
+		class Impl final {
+		public:
+			Impl(Type type, Number a, Number b, std::vector<Number> points)
+				: type(type), a(a), b(b), points(points) {}
+			Type type;
+			Number a, b;
+			std::vector<Number> points;
+		};
+
+		std::shared_ptr<Impl> _impl;
+	};
+
+	template <typename Number = double>
 	class Base {
 	public:
 		virtual ~Base() = default;
