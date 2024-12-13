@@ -50,7 +50,7 @@ namespace alfi::dist {
 			return {(a+b)/2};
 		Container points(n);
 		for (size_t i = 0; i < n; ++i) {
-			points[i] = a + (b - a) * static_cast<Number>(i) / static_cast<Number>(n - 1);	
+			points[i] = a + (b - a) * static_cast<Number>(i) / static_cast<Number>(n - 1);
 		}
 		return points;
 	}

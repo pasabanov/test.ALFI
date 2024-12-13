@@ -20,7 +20,7 @@ namespace alfi::misc {
 		if (X.empty()) {
 			std::cerr << "Error in function " << __FUNCTION__
 					  << ": Vectors X and Y are empty. Cannot interpolate. Returning an empty array..." << std::endl;
-			return {};	
+			return {};
 		}
 
 		const size_t N = X.size();
@@ -39,7 +39,7 @@ namespace alfi::misc {
 				}
 			}
 			// TODO: Investigate if normalization is needed.
-			// Normalization is needed because the middle coefficients grow as O(2^n), 
+			// Normalization is needed because the middle coefficients grow as O(2^n),
 			// while the edges grow as O(1). Dividing by 2^(N/2) balances the exponents,
 			// reducing numerical instability.
 			// const Number norm_factor = std::pow(static_cast<Number>(2), static_cast<Number>(N / 2));

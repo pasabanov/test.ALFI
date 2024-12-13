@@ -59,7 +59,7 @@ namespace alfi::poly {
 		if (X.empty()) {
 			std::cerr << "Error in function " << __FUNCTION__
 					  << ": Vectors X and Y are empty. Cannot interpolate. Returning an empty array..." << std::endl;
-			return {};	
+			return {};
 		}
 
 		const size_t n = X.size();
@@ -102,7 +102,7 @@ namespace alfi::poly {
 		if (X.empty()) {
 			std::cerr << "Error in function " << __FUNCTION__
 					  << ": Vectors X and Y are empty. Cannot interpolate. Returning an empty array..." << std::endl;
-			return {};	
+			return {};
 		}
 
 		const size_t n = X.size();
