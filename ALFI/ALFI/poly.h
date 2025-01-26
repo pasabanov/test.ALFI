@@ -254,7 +254,7 @@ namespace alfi::poly {
 		for (SizeT i = 1; i < N; ++i) {
 			for (SizeT j = N - 1; j >= i; --j) {
 				F[j] = (F[j] - F[j-1]) / (X[j] - X[j-i]);
-			}	
+			}
 		}
 
 		Container<Number> P(N);
@@ -313,7 +313,7 @@ namespace alfi::poly {
 		for (SizeT i = 1; i < N; ++i) {
 			for (SizeT j = N - 1; j >= i; --j) {
 				F[j] = (F[j] - F[j-1]) / (X[j] - X[j-i]);
-			}	
+			}
 		}
 
 		Container<Number> yy(nn);
