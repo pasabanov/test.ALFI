@@ -34,6 +34,10 @@ jobs:
         languages: c-cpp
         build-mode: manual
         queries: security-and-quality
+        config: |
+          paths-ignore:
+            - '/tests/deps/**'
+            - '/tests/test_data/**'
 
     - name: Install dependencies
       run: ./helper.py -d
