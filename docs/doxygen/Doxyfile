@@ -1,0 +1,66 @@
+# Doxyfile 1.13.2
+
+#---------#
+# Project #
+#---------#
+
+PROJECT_NAME           = ALFI
+PROJECT_NUMBER         =
+PROJECT_BRIEF          = "Advanced Library for Function Interpolation"
+PROJECT_LOGO           =
+PROJECT_ICON           =
+OUTPUT_DIRECTORY       = docs/doxygen
+ALWAYS_DETAILED_SEC    = YES
+BUILTIN_STL_SUPPORT    = YES
+
+#-------#
+# Build #
+#-------#
+
+EXTRACT_ALL            = YES
+SORT_MEMBER_DOCS       = NO
+SORT_BRIEF_DOCS        = NO
+GENERATE_TODOLIST      = NO
+
+#-------------#
+# Input files #
+#-------------#
+
+INPUT                  = ALFI
+FILE_PATTERNS          = *
+RECURSIVE              = YES
+EXAMPLE_PATH           = examples
+EXAMPLE_PATTERNS       = *
+EXAMPLE_RECURSIVE      = YES
+USE_MDFILE_AS_MAINPAGE =
+
+#--------#
+# Output #
+#--------#
+
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+HTML_COLORSTYLE        = TOGGLE
+HTML_DYNAMIC_MENUS     = NO
+HTML_COPY_CLIPBOARD    = NO
+HTML_PROJECT_COOKIE    = ALFI
+SITEMAP_URL            = alfi-lib.github.io/ALFI
+DISABLE_INDEX          = NO
+GENERATE_TREEVIEW      = YES
+ENUM_VALUES_PER_LINE   = 1
+EXT_LINKS_IN_WINDOW    = YES
+HTML_FORMULA_FORMAT    = svg
+USE_MATHJAX            = YES
+MATHJAX_VERSION        = MathJax_3
+MATHJAX_FORMAT         = SVG
+MATHJAX_RELPATH        = mathjax
+MATHJAX_EXTENSIONS     = ams physics
+
+#-------------------------#
+# Diagram generator tools #
+#-------------------------#
+
+HAVE_DOT               = YES
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES
+DOT_MULTI_TARGETS      = YES
