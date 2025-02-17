@@ -94,4 +94,27 @@ namespace alfi::ratf {
 		}
 		return result;
 	}
+
+	template <typename Number = DefaultNumber, template <typename, typename...> class Container = DefaultContainer>
+	RationalFunction<Number,Container> pade(const Container<Number> P, SizeT n, SizeT m) {
+		// const auto get_p = [&](SizeT i) {
+		// 	if (i >= P.size()) {
+		// 		return 0;
+		// 	}
+		// 	return P[i];
+		// };
+		// const auto d = P.size();
+		// Container<Number> A(n);
+		// Container<Number> B(m);
+		// // evaluating B
+		//
+		// // evaluating A
+		// for (SizeT i = 0; i < n; ++i) {
+		// 	A[i] = get_p(i);
+		// 	for (SizeT j = 0; j <= i; ++j) {
+		// 		A[i] += B[j] * get_p(i-1-j);
+		// 	}
+		// }
+		// return {A, B};
+	}
 }
