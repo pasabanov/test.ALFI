@@ -208,7 +208,7 @@ namespace alfi::spline {
 				const auto i = fixed_second->segment_idx;
 				if (i < 0 || i >= n - 1) {
 					std::cerr << "Error in function " << __FUNCTION__
-							  << ": point index for type 'FixedSecond' is out of bounds: "
+							  << ": segment index for type 'FixedSecond' is out of bounds: "
 							  << "expected to be non-negative and less than " << n - 1 << ", but got " << i
 							  << ". Returning an empty array..." << std::endl;
 					return {};
