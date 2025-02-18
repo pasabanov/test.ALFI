@@ -185,7 +185,7 @@ namespace alfi::spline {
 				const auto i = clamped->point_idx;
 				if (i < 0 || i >= n) {
 					std::cerr << "Error in function " << __FUNCTION__
-							  << ": point index for type 'Clamped' is out of bounds:"
+							  << ": point index for type 'Clamped' is out of bounds: "
 							  << "expected to be non-negative and less than " << n << ", but got " << i
 							  << ". Returning an empty array..." << std::endl;
 					return {};
@@ -208,7 +208,7 @@ namespace alfi::spline {
 				const auto i = fixed_second->segment_idx;
 				if (i < 0 || i >= n - 1) {
 					std::cerr << "Error in function " << __FUNCTION__
-							  << ": point index for type 'FixedSecond' is out of bounds:"
+							  << ": point index for type 'FixedSecond' is out of bounds: "
 							  << "expected to be non-negative and less than " << n - 1 << ", but got " << i
 							  << ". Returning an empty array..." << std::endl;
 					return {};
@@ -224,7 +224,7 @@ namespace alfi::spline {
 				const auto i = not_a_knot->point_idx;
 				if (i < 1 || i >= n - 1) {
 					std::cerr << "Error in function " << __FUNCTION__
-							  << ": point index for type 'NotAKnot' is out of bounds:"
+							  << ": point index for type 'NotAKnot' is out of bounds: "
 							  << "expected to be positive and less than " << n - 1 << ", but got " << i
 							  << ". Returning an empty array..." << std::endl;
 					return {};
@@ -239,8 +239,8 @@ namespace alfi::spline {
 				i1 = i - 1;
 				i2 = i;
 			} else {
-				std::cerr << "Error in function " << __FUNCTION__ << ": Unknown type. This should not have happened."
-						  << " Please report this to the developers. Returning an empty array..." << std::endl;
+				std::cerr << "Error in function " << __FUNCTION__ << ": Unknown type. This should not have happened. "
+						  << "Please report this to the developers. Returning an empty array..." << std::endl;
 				return {};
 			}
 
