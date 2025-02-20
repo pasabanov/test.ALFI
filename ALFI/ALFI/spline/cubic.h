@@ -582,7 +582,7 @@ namespace alfi::spline {
 			return std::move(_coeffs);
 		}
 
-		static std::pair<SizeT, size_t> segment(size_t index) {
+		static std::pair<SizeT, SizeT> segment(SizeT index) {
 			return {4*index, 4*(index+1)};
 		}
 
