@@ -35,38 +35,28 @@ namespace alfi::spline {
 			Default = IGNORE_NANS_AND_PREVIOUS,
 		};
 
-		PolyEqvSpline() = default;
-		PolyEqvSpline(const Container<Number>& X,
-					  const Container<Number>& Y,
-					  PolynomialType polynomial_type = PolynomialType::Default,
-					  OptimizationType optimization_type = OptimizationType::Default) {
-			construct(X, Y, polynomial_type, optimization_type);
-		}
-
-		PolyEqvSpline(const PolyEqvSpline& other) = default;
-		PolyEqvSpline(PolyEqvSpline&& other) noexcept = default;
-
-		PolyEqvSpline& operator=(const PolyEqvSpline& other) = default;
-		PolyEqvSpline& operator=(PolyEqvSpline&& other) noexcept = default;
-
-		void construct(const Container<Number>& X,
-					   const Container<Number>& Y,
-					   PolynomialType polynomial_type = PolynomialType::Default,
-					   OptimizationType optimization_type = OptimizationType::Default,
-					   EvaluationType evaluation_type = EvaluationType::Default) {
-			_X = X;
-			_polynomial_type = polynomial_type;
-			_optimization_type = optimization_type;
-			_evaluation_type = evaluation_type;
-
-			const SizeT n = static_cast<SizeT>(X.size());
-
-			if (n <= 3) {
-				_coeffs = util::spline::simple_spline<Number,Container>(X, Y, n - 1);
-				return;
+		static Container<Number> compute_coeffs(
+				const Container<Number>& X,
+				const Container<Number>& Y,
+				PolynomialType polynomial_type = PolynomialType::Default,
+				OptimizationType optimization_type = OptimizationType::Default,
+				EvaluationType evaluation_type = EvaluationType::Default
+		) {
+			if (X.size() != Y.size()) {
+				std::cerr << "Error in function " << __FUNCTION__
+						  << ": Vectors X (of size " << X.size()
+						  << ") and Y (of size " << Y.size()
+						  << ") are not the same size. Returning an empty array..." << std::endl;
+				return {};
 			}
 
-			_coeffs.resize(n * (n - 1)); // n coefficients for n-1 intervals
+			const SizeT n = X.size();
+
+			if (n <= 4) {
+				return util::spline::simple_spline<Number,Container>(X, Y, n - 1);
+			}
+
+			Container<Number> coeffs(n * (n - 1)); // n coefficients for n-1 intervals
 
 			switch (optimization_type) {
 				case OptimizationType::ACCURACY: {
@@ -80,8 +70,8 @@ namespace alfi::spline {
 							case PolynomialType::IMPROVED_LAGRANGE: P = poly::imp_lagrange(X, Y); break;
 							case PolynomialType::NEWTON: P = poly::newton(X, Y); break;
 						}
-						std::move(P.begin(), P.end(), _coeffs.begin() + (i * n));
-						_coeffs[i*n+n-1] = Y[i];
+						std::move(P.begin(), P.end(), coeffs.begin() + (i * n));
+						coeffs[i*n+n-1] = Y[i];
 					}
 					break;
 				}
@@ -111,20 +101,54 @@ namespace alfi::spline {
 #pragma omp parallel for
 #endif
 					for (SizeT i = 0; i < n - 1; ++i) {
-						_coeffs[i*n] = P[0];
+						coeffs[i*n] = P[0];
 						for (SizeT k = 1; k < n - 1; ++k) {
 							Number r = 0;
 							for (SizeT j = 0; j < k; ++j) {
-								r += (((k - j) & 1 == 0) ? 1 : -1) * _coeffs[i*n+j] * C[n-1-j][k-j];
+								r += (((k - j) & 1 == 0) ? 1 : -1) * coeffs[i*n+j] * C[n-1-j][k-j];
 								r *= X[i];
 							}
-							_coeffs[i*n+k] = P[k] - r;
+							coeffs[i*n+k] = P[k] - r;
 						}
-						_coeffs[i*n+n-1] = Y[i];
+						coeffs[i*n+n-1] = Y[i];
 					}
 					break;
 				}
 			}
+
+			return coeffs;
+		}
+
+		PolyEqvSpline() = default;
+		PolyEqvSpline(const Container<Number>& X,
+					  const Container<Number>& Y,
+					  PolynomialType polynomial_type = PolynomialType::Default,
+					  OptimizationType optimization_type = OptimizationType::Default) {
+			construct(X, Y, polynomial_type, optimization_type);
+		}
+
+		PolyEqvSpline(const PolyEqvSpline& other) = default;
+		PolyEqvSpline(PolyEqvSpline&& other) noexcept = default;
+
+		PolyEqvSpline& operator=(const PolyEqvSpline& other) = default;
+		PolyEqvSpline& operator=(PolyEqvSpline&& other) noexcept = default;
+
+		void construct(const Container<Number>& X,
+					   const Container<Number>& Y,
+					   PolynomialType polynomial_type = PolynomialType::Default,
+					   OptimizationType optimization_type = OptimizationType::Default,
+					   EvaluationType evaluation_type = EvaluationType::Default) {
+			auto coeffs = compute_coeffs(X, Y, polynomial_type, optimization_type, evaluation_type);
+			if (coeffs.empty() && !X.empty()) {
+				std::cerr << "Error in function " << __FUNCTION__
+						  << ": failed to construct coefficients. Not changing the object..." << std::endl;
+				return;
+			}
+			_polynomial_type = polynomial_type;
+			_optimization_type = optimization_type;
+			_evaluation_type = evaluation_type;
+			_X = X;
+			_coeffs = std::move(coeffs);
 		}
 
 		Number eval(Number const x) const {
@@ -137,7 +161,7 @@ namespace alfi::spline {
 				return _coeffs[0];
 			}
 
-			segment = std::max(std::min(segment, _X.size() - 2), 0);
+			segment = std::clamp(segment, static_cast<SizeT>(0), static_cast<SizeT>(_X.size() - 2));
 
 			x = x - _X[segment];
 
