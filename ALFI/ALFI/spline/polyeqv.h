@@ -56,7 +56,7 @@ namespace alfi::spline {
 				return util::spline::simple_spline<Number,Container>(X, Y, n - 1);
 			}
 
-			Container<Number> coeffs(n * (n - 1)); // n coefficients for n-1 intervals
+			Container<Number> coeffs(n * (n - 1)); // n coefficients for n-1 segments
 
 			switch (optimization_type) {
 				case OptimizationType::ACCURACY: {
@@ -89,7 +89,7 @@ namespace alfi::spline {
 							C[i].resize(i + 1);
 							C[i][0] = C[i][i] = 1;
 							for (SizeT j = 1; j <= i / 2; ++j) {
-								C[i][j] = C[i][i - j] = C[i - 1][j - 1] + C[i - 1][j];
+								C[i][j] = C[i][i-j] = C[i-1][j-1] + C[i-1][j];
 							}
 						}
 						return C;
@@ -187,8 +187,7 @@ namespace alfi::spline {
 					switch (_evaluation_type) {
 						case EvaluationType::IGNORE_NANS_AND_PREVIOUS:
 							result = 0;
-							current = 0;
-							break;
+							[[fallthrough]];
 						case EvaluationType::IGNORE_NANS:
 							current = 0;
 							break;
@@ -234,21 +233,25 @@ namespace alfi::spline {
 			return _optimization_type;
 		}
 
-		const Container<Number>& X() const {
+		EvaluationType evaluation_type() const {
+			return _evaluation_type;
+		}
+
+		const Container<Number>& X() const & {
 			return _X;
 		}
 		Container<Number>&& X() && {
 			return std::move(_X);
 		}
 
-		const Container<Number>& coeffs() const {
+		const Container<Number>& coeffs() const & {
 			return _coeffs;
 		}
 		Container<Number>&& coeffs() && {
 			return std::move(_coeffs);
 		}
 
-		static std::pair<SizeT, SizeT> segment(SizeT index) {
+		std::pair<SizeT, SizeT> segment(SizeT index) const {
 			return {_X.size()*index, _X.size()*(index+1)};
 		}
 
