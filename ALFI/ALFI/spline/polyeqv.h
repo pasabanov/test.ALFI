@@ -70,18 +70,15 @@ namespace alfi::spline {
 
 			switch (optimization_type) {
 				case OptimizationType::ACCURACY: {
+#if defined(_OPENMP) && !defined(ALFI_DISABLE_OPENMP)
+#pragma omp parallel for
+#endif
 					for (SizeT i = 0; i < n - 1; ++i) {
 						Container<Number> P;
 						switch (polynomial_type) {
-							case PolynomialType::LAGRANGE:
-								P = poly::lagrange(X, Y);
-							break;
-							case PolynomialType::IMPROVED_LAGRANGE:
-								P = poly::imp_lagrange(X, Y);
-							break;
-							case PolynomialType::NEWTON:
-								P = poly::newton(X, Y);
-							break;
+							case PolynomialType::LAGRANGE: P = poly::lagrange(X, Y); break;
+							case PolynomialType::IMPROVED_LAGRANGE: P = poly::imp_lagrange(X, Y); break;
+							case PolynomialType::NEWTON: P = poly::newton(X, Y); break;
 						}
 						std::move(P.begin(), P.end(), _coeffs.begin() + (i * n));
 						_coeffs[i*n+n-1] = Y[i];
@@ -91,15 +88,9 @@ namespace alfi::spline {
 				case OptimizationType::SPEED: {
 					Container<Number> P;
 					switch (polynomial_type) {
-						case PolynomialType::LAGRANGE:
-							P = poly::lagrange(X, Y);
-						break;
-						case PolynomialType::IMPROVED_LAGRANGE:
-							P = poly::imp_lagrange(X, Y);
-						break;
-						case PolynomialType::NEWTON:
-							P = poly::newton(X, Y);
-						break;
+						case PolynomialType::LAGRANGE: P = poly::lagrange(X, Y); break;
+						case PolynomialType::IMPROVED_LAGRANGE: P = poly::imp_lagrange(X, Y); break;
+						case PolynomialType::NEWTON: P = poly::newton(X, Y); break;
 					}
 
 					const static auto binomials = [](SizeT m) {
@@ -116,6 +107,9 @@ namespace alfi::spline {
 
 					const auto C = binomials(n - 1);
 
+#if defined(_OPENMP) && !defined(ALFI_DISABLE_OPENMP)
+#pragma omp parallel for
+#endif
 					for (SizeT i = 0; i < n - 1; ++i) {
 						_coeffs[i*n] = P[0];
 						for (SizeT k = 1; k < n - 1; ++k) {
@@ -156,27 +150,29 @@ namespace alfi::spline {
 					case EvaluationType::IGNORE_NANS_AND_PREVIOUS:
 					case EvaluationType::IGNORE_NANS:
 						result = 0;
-					break;
+						break;
 					case EvaluationType::NOT_IGNORE_NANS:
 						return result;
 				}
 			}
 
 			for (SizeT i = 1; i < n; ++i) {
+				result *= x;
 				Number current = _coeffs[segment*n+i];
 				if (std::isnan(current)) {
 					switch (_evaluation_type) {
 						case EvaluationType::IGNORE_NANS_AND_PREVIOUS:
 							result = 0;
-						break;
+							current = 0;
+							break;
 						case EvaluationType::IGNORE_NANS:
 							current = 0;
-						break;
+							break;
 						case EvaluationType::NOT_IGNORE_NANS:
 							return current;
 					}
 				}
-				result = result * x + current;
+				result += current;
 			}
 
 			return result;
