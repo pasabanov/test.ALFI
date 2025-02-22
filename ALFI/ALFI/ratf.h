@@ -14,12 +14,12 @@ namespace alfi::ratf {
 	std::enable_if_t<!traits::has_size<Number>::value, Number>
 	val_mul(const RationalFunction<Number, Container>& rf, Number x) {
 		Number n = 0;
-		for (const Number& c : rf.first) {
-			n = x * n + c;
+		for (const auto& c : rf.first) {
+			n = n * x + c;
 		}
 		Number d = 0;
-		for (const Number& c : rf.second) {
-			d = x * d + c;
+		for (const auto& c : rf.second) {
+			d = d * x + c;
 		}
 		return n / d;
 	}
