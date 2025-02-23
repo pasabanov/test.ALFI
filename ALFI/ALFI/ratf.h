@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "config.h"
+#include "util/linalg.h"
 #include "util/numeric.h"
 
 namespace alfi::ratf {
@@ -96,25 +97,62 @@ namespace alfi::ratf {
 	}
 
 	template <typename Number = DefaultNumber, template <typename, typename...> class Container = DefaultContainer>
-	RationalFunction<Number,Container> pade(const Container<Number> P, SizeT n, SizeT m) {
-		// const auto get_p = [&](SizeT i) {
-		// 	if (i >= P.size()) {
-		// 		return 0;
-		// 	}
-		// 	return P[i];
-		// };
-		// const auto d = P.size();
-		// Container<Number> A(n);
-		// Container<Number> B(m);
-		// // evaluating B
-		//
-		// // evaluating A
-		// for (SizeT i = 0; i < n; ++i) {
-		// 	A[i] = get_p(i);
-		// 	for (SizeT j = 0; j <= i; ++j) {
-		// 		A[i] += B[j] * get_p(i-1-j);
-		// 	}
-		// }
-		// return {A, B};
+	RationalFunction<Number,Container> pade(const Container<Number>& P, SizeT n, SizeT m, Number epsilon = std::numeric_limits<Number>::epsilon()) {
+		if (m == 0) {
+			return {P, {static_cast<Number>(1)}};
+		}
+		const static auto get_or_0 = [](const Container<Number>& arr, SizeT index) -> Number {
+			return 0 <= index && index < arr.size() ? arr[index] : static_cast<Number>(0);
+		};
+		Container<Number> B(m + 1);
+		// I. Evaluating B
+		// Matrix
+		Container<Container<Number>> M(m);
+		// Right-hand side
+		Container<Number> R(m);
+		// Filling system of equations
+		for (SizeT row = 0; row < m; ++row) {
+			R[row] = -get_or_0(P, n + 1 + row);
+			for (SizeT col = 0; col < m; ++col) {
+				M[row][col] = get_or_0(P, n + row - col);
+			}
+		}
+		// Removing zeroed rows
+		for (SizeT row = n + m - 1; row > n; ++row) {
+			bool all_zero = true;
+			if (std::abs(R[row]) < epsilon) {
+				for (SizeT col = 0; col < m; ++col) {
+					if (std::abs(M[row][col]) >= epsilon) {
+						all_zero = false;
+						break;
+					}
+				}
+			}
+			if (!all_zero) {
+				break;
+			}
+			B[row+1-n] = 0;
+			M.pop_back();
+			for (auto& r : M) {
+				r.pop_back();
+			}
+			R.pop_back();
+		}
+		// Solving system of equations
+		auto X = util::linalg::lup_solve(M, R, epsilon);
+		if (X.empty()) {
+			std::cout << "Failed to construct Pade approximation" << std::endl;
+			return {{}, {}};
+		}
+		std::move(X.begin(), X.end(), B.begin() + 1);
+		Container<Number> A(n + 1);
+		// II. Evaluating A
+		for (SizeT i = 0; i < A.size(); ++i) {
+			A[i] = get_or_0(P, i);
+			for (SizeT j = 1; j <= i; ++j) {
+				A[i] += get_or_0(B, j - 1) * get_or_0(P, i - j);
+			}
+		}
+		return {A, B};
 	}
 }
