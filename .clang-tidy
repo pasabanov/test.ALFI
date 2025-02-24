@@ -1,2 +1,2 @@
-Checks: 'clang-analyzer-*,clang-diagnostic-*'
+Checks: 'clang-analyzer-*,clang-diagnostic-*,concurrency-*,opemp-*'
 UseColor: true
