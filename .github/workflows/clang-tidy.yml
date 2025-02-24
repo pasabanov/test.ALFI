@@ -39,7 +39,7 @@ jobs:
         run: |
           set -o pipefail
           files=$(find ALFI examples tests -path '*.h' -o -path '*.cpp' ! -path '*/deps/*')
-          clang-tidy -p ${{ env.BUILD_DIR }} $files 2>&1 |
+          clang-tidy -p ${{ env.BUILD_DIR }} --use-color $files 2>&1 |
             sed "s|${{ github.workspace }}/||g" |
             tee >(ansi2txt | clang-tidy-sarif > results.sarif)
 
