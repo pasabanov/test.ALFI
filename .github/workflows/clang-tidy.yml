@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
+      security-events: write
       contents: read
 
     steps:
@@ -26,12 +27,17 @@ jobs:
       - name: Build
         run: ./helper.py -b ${{ env.PROFILE }}
       - name: Install clang-tidy
-        run: sudo apt install -y clang-tidy
+        run: sudo apt install -y clang-tidy colorized-logs
+      - name: Install clang-tidy-sarif
+        run: cargo install clang-tidy-sarif
       - name: Run clang-tidy
-        run: clang-tidy -p ${{ env.BUILD_DIR }} --export-fixes=clang-fixes.sarif ALFI/**/*.h examples/**/*.cpp
+        run: set -o pipefail && shopt -s globstar && clang-tidy -p ${{ env.BUILD_DIR }} --use-color ALFI/**/*.h examples/**/*.cpp 2>&1 | sed "s|${{ github.workspace }}/||g" | tee >(ansi2txt > clang-fixes.txt)
+      - name: Generate SARIF
+        run: cat clang-fixes.txt | clang-tidy-sarif > clang-fixes.sarif
+        if: ${{ !cancelled() }}
       - name: Upload SARIF report to GitHub
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: clang-fixes.sarif
           category: Clang-Tidy
-        if: always()
+        if: ${{ !cancelled() }}
