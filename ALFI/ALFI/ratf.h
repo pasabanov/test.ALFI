@@ -105,6 +105,7 @@ namespace alfi::ratf {
 			return 0 <= index && index < arr.size() ? arr[index] : static_cast<Number>(0);
 		};
 		Container<Number> B(m + 1);
+		B[0] = 1;
 		// I. Evaluating B
 		// Matrix
 		Container<Container<Number>> M(m);
@@ -113,12 +114,14 @@ namespace alfi::ratf {
 		// Filling system of equations
 		for (SizeT row = 0; row < m; ++row) {
 			R[row] = -get_or_0(P, n + 1 + row);
+			M[row].resize(m);
 			for (SizeT col = 0; col < m; ++col) {
 				M[row][col] = get_or_0(P, n + row - col);
 			}
 		}
 		// Removing zeroed rows
-		for (SizeT row = n + m - 1; row > n; ++row) {
+		for (SizeT row_iter = 0; row_iter < m; ++row_iter) {
+			const auto row = m - 1 - row_iter;
 			bool all_zero = true;
 			if (std::abs(R[row]) < epsilon) {
 				for (SizeT col = 0; col < m; ++col) {
@@ -131,7 +134,7 @@ namespace alfi::ratf {
 			if (!all_zero) {
 				break;
 			}
-			B[row+1-n] = 0;
+			B[row] = 0;
 			M.pop_back();
 			for (auto& r : M) {
 				r.pop_back();
@@ -139,7 +142,7 @@ namespace alfi::ratf {
 			R.pop_back();
 		}
 		// Solving system of equations
-		auto X = util::linalg::lup_solve(M, R, epsilon);
+		auto X = util::linalg::lup_solve(std::move(M), std::move(R), epsilon);
 		if (X.empty()) {
 			std::cout << "Failed to construct Pade approximation" << std::endl;
 			return {{}, {}};
