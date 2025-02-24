@@ -1,3 +1,2 @@
-Checks:          'clang-diagnostic-*,clang-analyzer-*'
-ExcludeHeaderFilterRegex: '.*/deps/.*'
-UseColor:        true
+Checks: 'clang-analyzer-*,clang-diagnostic-*'
+UseColor: true
