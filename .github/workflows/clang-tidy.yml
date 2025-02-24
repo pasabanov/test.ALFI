@@ -38,15 +38,12 @@ jobs:
         run: |
           set -o pipefail
           shopt -s globstar
-          clang-tidy -p ${{ env.BUILD_DIR }} --use-color ALFI/**/*.h examples/**/*.cpp 2>&1 |
+          clang-tidy -p ${{ env.BUILD_DIR }} ALFI/**/*.h examples/**/*.cpp 2>&1 |
             sed "s|${{ github.workspace }}/||g" |
-            tee >(ansi2txt > results.txt)
+            tee >(ansi2txt | clang-tidy-sarif > results.sarif)
         continue-on-error: true
 
-      - name: Generate SARIF report
-        run: clang-tidy-sarif -i results.txt -o results.sarif
-
-      - name: Upload SARIF report
+      - name: Upload results
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
