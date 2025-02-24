@@ -44,7 +44,7 @@ jobs:
             tee >(ansi2txt | clang-tidy-sarif > results.sarif)
 
       - name: Upload results
-        if: steps.run-clang-tidy.outcome == 'success' || steps.run-clang-tidy.outcome == 'failure'
+        if: success() || steps.run-clang-tidy.outcome == 'failure'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
