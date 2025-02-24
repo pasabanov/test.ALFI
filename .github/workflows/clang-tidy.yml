@@ -1,0 +1,36 @@
+name: Clang-Tidy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  PROFILE: Debug
+  BUILD_DIR: build/debug
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        run: ./helper.py -d
+      - name: Build
+        run: ./helper.py -b ${{ env.PROFILE }}
+      - name: Install clang-tidy
+        run: sudo apt install -y clang-tidy
+      - name: Run clang-tidy
+        run: clang-tidy -p ${{ env.BUILD_DIR }} --export-fixes=clang-fixes.yaml ALFI/**/*.h examples/**/*.cpp
+      - name: Process clang-tidy warnings
+        uses: asarium/clang-tidy-action@v1
+        with:
+          fixesFile: clang-fixes.yaml
+        if: always()
