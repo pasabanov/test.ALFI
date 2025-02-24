@@ -1,5 +1,3 @@
 Checks:          'clang-diagnostic-*,clang-analyzer-*'
-#HeaderFilterRegex: '^(ALFI|examples|tests)/.*\.(h|cpp)$'
-#ExcludeHeaderFilterRegex: '.*/(deps|test_data)/.*'
+ExcludeHeaderFilterRegex: '.*/deps/.*'
 UseColor:        true
-SystemHeaders:   false
