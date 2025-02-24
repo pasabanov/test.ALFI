@@ -31,7 +31,7 @@ jobs:
 
       - name: Install clang-tidy and tools
         run: |
-          sudo apt install -y clang-tidy colorized-logs
+          sudo apt install -y clang-tidy-19 colorized-logs
           cargo install clang-tidy-sarif
 
       - name: Run clang-tidy
@@ -39,7 +39,7 @@ jobs:
         run: |
           set -o pipefail
           shopt -s globstar
-          clang-tidy -p ${{ env.BUILD_DIR }} ALFI/**/*.h examples/**/*.cpp 2>&1 |
+          clang-tidy-19 -p ${{ env.BUILD_DIR }} ALFI/**/*.h examples/**/*.cpp 2>&1 |
             sed "s|${{ github.workspace }}/||g" |
             tee >(ansi2txt | clang-tidy-sarif > results.sarif)
 
