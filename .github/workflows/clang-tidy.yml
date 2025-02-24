@@ -35,15 +35,16 @@ jobs:
           cargo install clang-tidy-sarif
 
       - name: Run clang-tidy
+        id: run-clang-tidy
         run: |
           set -o pipefail
           shopt -s globstar
           clang-tidy -p ${{ env.BUILD_DIR }} ALFI/**/*.h examples/**/*.cpp 2>&1 |
             sed "s|${{ github.workspace }}/||g" |
             tee >(ansi2txt | clang-tidy-sarif > results.sarif)
-        continue-on-error: true
 
       - name: Upload results
+        if: steps.run-clang-tidy.outcome == 'success' || steps.run-clang-tidy.outcome == 'failure'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
