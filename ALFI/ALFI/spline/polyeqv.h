@@ -7,6 +7,7 @@
 #include "../config.h"
 #include "../poly.h"
 #include "../util/misc.h"
+#include "../util/spline.h"
 
 namespace alfi::spline {
 	template <typename Number = DefaultNumber, template <typename, typename...> class Container = DefaultContainer>
