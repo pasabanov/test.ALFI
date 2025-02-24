@@ -22,22 +22,32 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Install dependencies
         run: ./helper.py -d
+
       - name: Build
         run: ./helper.py -b ${{ env.PROFILE }}
-      - name: Install clang-tidy
-        run: sudo apt install -y clang-tidy colorized-logs
-      - name: Install clang-tidy-sarif
-        run: cargo install clang-tidy-sarif
+
+      - name: Install clang-tidy and tools
+        run: |
+          sudo apt install -y clang-tidy colorized-logs
+          cargo install clang-tidy-sarif
+
       - name: Run clang-tidy
-        run: set -o pipefail && shopt -s globstar && clang-tidy -p ${{ env.BUILD_DIR }} --use-color ALFI/**/*.h examples/**/*.cpp 2>&1 | sed "s|${{ github.workspace }}/||g" | tee >(ansi2txt > clang-fixes.txt)
-      - name: Generate SARIF
-        run: cat clang-fixes.txt | clang-tidy-sarif > clang-fixes.sarif
-        if: ${{ !cancelled() }}
-      - name: Upload SARIF report to GitHub
+        run: |
+          set -o pipefail
+          shopt -s globstar
+          clang-tidy -p ${{ env.BUILD_DIR }} --use-color ALFI/**/*.h examples/**/*.cpp 2>&1 |
+            sed "s|${{ github.workspace }}/||g" |
+            tee >(ansi2txt > results.txt)
+        continue-on-error: true
+
+      - name: Generate SARIF report
+        run: clang-tidy-sarif -i results.txt -o results.sarif
+
+      - name: Upload SARIF report
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: clang-fixes.sarif
+          sarif_file: results.sarif
           category: Clang-Tidy
-        if: ${{ !cancelled() }}
