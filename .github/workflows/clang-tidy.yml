@@ -28,9 +28,10 @@ jobs:
       - name: Install clang-tidy
         run: sudo apt install -y clang-tidy
       - name: Run clang-tidy
-        run: clang-tidy -p ${{ env.BUILD_DIR }} --export-fixes=clang-fixes.yaml ALFI/**/*.h examples/**/*.cpp
-      - name: Process clang-tidy warnings
-        uses: asarium/clang-tidy-action@v1
+        run: clang-tidy -p ${{ env.BUILD_DIR }} --export-fixes=clang-fixes.sarif ALFI/**/*.h examples/**/*.cpp
+      - name: Upload SARIF report to GitHub
+        uses: github/codeql-action/upload-sarif@v3
         with:
-          fixesFile: clang-fixes.yaml
+          sarif_file: clang-fixes.sarif
+          category: Clang-Tidy
         if: always()
