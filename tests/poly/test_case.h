@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include <ALFI/poly.h>
+
 #include "../test_utils.h"
 
 inline void test_case(const std::vector<double>& X, const std::vector<double>& Y,
