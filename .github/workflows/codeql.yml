@@ -1,4 +1,4 @@
-name: "CodeQL Advanced"
+name: CodeQL Advanced
 
 on:
   push:
@@ -20,7 +20,6 @@ jobs:
 
     strategy:
       fail-fast: false
-
       matrix:
         profile: [ Debug ]
 
@@ -44,4 +43,4 @@ jobs:
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
       with:
-        category: "/language:c-cpp"
+        category: /language:c-cpp
