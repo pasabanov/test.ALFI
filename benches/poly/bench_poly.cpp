@@ -12,18 +12,23 @@ static void BM_val_scalar(benchmark::State& state) {
 	for (auto _ : state) {
 		benchmark::DoNotOptimize(alfi::poly::val(coeffs, x));
 	}
+	state.counters["abc"] = 1;
+	state.counters["abcd"] = 1;
+	state.counters["qwe"] = 2;
 }
 BENCHMARK(BM_val_scalar);
 
 static void BM_val_vector(benchmark::State& state) {
 	const std::vector<double> coeffs{1, 2, 3, 4, 5};
-	std::vector<double> X(1000);
-	for (std::size_t i = 0; i < X.size(); ++i) {
-		X[i] = 1.0 + i * 0.01;
+	std::vector<double> xx(1000);
+	for (std::size_t i = 0; i < xx.size(); ++i) {
+		xx[i] = 1.0 + i * 0.01;
 	}
 	for (auto _ : state) {
-		benchmark::DoNotOptimize(alfi::poly::val(coeffs, X));
+		benchmark::DoNotOptimize(alfi::poly::val(coeffs, xx));
 	}
+	state.counters["abc"] = 1;
+	state.counters["qwe"] = 2;
 }
 BENCHMARK(BM_val_vector);
 

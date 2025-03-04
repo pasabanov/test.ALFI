@@ -28,15 +28,16 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--deps', action='store_true', help="Install dependencies")
 parser.add_argument('-b', '--build', action='store_true', help="Build project (requires profile)")
 parser.add_argument('-t', '--test', action='store_true', help='Run tests (requires profile)')
+parser.add_argument('--bench', action='store_true', help='Run benchmarks (requires profile)')
 parser.add_argument('--doxygen', action='store_true', help='Generate Doxygen documentation')
 parser.add_argument('profile', nargs='?', help="Profile to build and/or test (case-insensitive)")
 args = parser.parse_args()
 
-if (args.build or args.test) and not args.profile:
-	parser.error("'--build' and '--test' require 'profile'")
+if (args.build or args.test or args.bench) and not args.profile:
+	parser.error("'--build', '--test', and '--bench' require 'profile'")
 
-if args.profile and not (args.build or args.test):
-	parser.error("'profile' requires '--build' or '--test'")
+if args.profile and not (args.build or args.test or args.bench):
+	parser.error("'profile' requires '--build', '--test', or '--bench'")
 
 profile_dir = None
 if args.profile:
@@ -58,6 +59,8 @@ if args.build:
 	execute_command(['cmake', '--build', profile_dir, '-j', str(os.cpu_count())])
 if args.test:
 	execute_command(['ctest', '--test-dir', profile_dir, '--verbose'])
+if args.bench:
+	execute_command([profile_dir + '/benches/bench', '--benchmark_color=yes', '--benchmark_counters_tabular=yes'])
 if args.doxygen:
 	local = 'docs/doxygen/html/mathjax/es5/'
 	remote = 'https://raw.githubusercontent.com/mathjax/MathJax/refs/tags/3.2.2/es5/'
