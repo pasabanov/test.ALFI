@@ -60,7 +60,7 @@ if args.build:
 if args.test:
 	execute_command(['ctest', '--test-dir', profile_dir, '--verbose'])
 if args.bench:
-	execute_command([profile_dir + '/benches/bench', '--benchmark_color=yes', '--benchmark_counters_tabular=yes'])
+	execute_command(['cmake', '--build', profile_dir, '--target', 'bench'])
 if args.doxygen:
 	local = 'docs/doxygen/html/mathjax/es5/'
 	remote = 'https://raw.githubusercontent.com/mathjax/MathJax/refs/tags/3.2.2/es5/'
