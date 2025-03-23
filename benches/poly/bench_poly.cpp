@@ -140,3 +140,5 @@ struct BenchmarkRegistrar {
 };
 
 [[maybe_unused]] const BenchmarkRegistrar registrar;
+
+BENCHMARK_MAIN();
