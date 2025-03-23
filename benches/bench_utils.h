@@ -24,3 +24,11 @@ std::vector<double> apply_func(const std::vector<double>& input, F func) {
 	std::transform(input.begin(), input.end(), result.begin(), func);
 	return result;
 }
+
+template <typename T, typename V1, typename V2>
+std::vector<T> concat_vectors(V1&& a, V2&& b) {
+	std::vector<T> result = std::forward<V1>(a);
+	result.reserve(std::size(a) + std::size(b));
+	result.insert(result.end(), std::make_move_iterator(std::begin(b)), std::make_move_iterator(std::end(b)));
+	return result;
+}
