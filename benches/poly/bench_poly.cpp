@@ -1,102 +1,142 @@
 #include <cmath>
-#include <limits>
 #include <vector>
 
 #include <benchmark/benchmark.h>
 
-#include "ALFI/poly.h"
+#include <ALFI/poly.h>
+#include <ALFI/util/arrays.h>
+#include <ALFI/util/stat.h>
+
+#include "../bench_utils.h"
+#include "../bench_data.h"
 
 static void BM_val_scalar(benchmark::State& state) {
-	const std::vector<double> coeffs{1, 2, 3, 4, 5};
-	const double x = 1.234;
-	for (auto _ : state) {
-		benchmark::DoNotOptimize(alfi::poly::val(coeffs, x));
+	std::vector<double> coeffs(state.range(0));
+	for (auto& coeff : coeffs) {
+		coeff = random_value<double>(-1, 1);
 	}
-	state.counters["abc"] = 1;
-	state.counters["abcd"] = 1;
-	state.counters["qwe"] = 2;
+	const auto x = random_value<double>(-1, 1);
+	double result;
+	for (auto _ : state) {
+		result = alfi::poly::val(coeffs, x);
+		benchmark::DoNotOptimize(result);
+		benchmark::ClobberMemory();
+	}
 }
-BENCHMARK(BM_val_scalar);
+BENCHMARK(BM_val_scalar)->Range(1 << 3, 1 << 12);
 
 static void BM_val_vector(benchmark::State& state) {
-	const std::vector<double> coeffs{1, 2, 3, 4, 5};
-	std::vector<double> xx(1000);
-	for (std::size_t i = 0; i < xx.size(); ++i) {
-		xx[i] = 1.0 + i * 0.01;
+	std::vector<double> coeffs(state.range(0));
+	for (auto& coeff : coeffs) {
+		coeff = random_value<double>(-1, 1);
 	}
-	for (auto _ : state) {
-		benchmark::DoNotOptimize(alfi::poly::val(coeffs, xx));
+	std::vector<double> xx(state.range(1));
+	for (auto& x : xx) {
+		x = random_value<double>(-1, 1);
 	}
-	state.counters["abc"] = 1;
-	state.counters["qwe"] = 2;
-}
-BENCHMARK(BM_val_vector);
-
-static void BM_lagrange(benchmark::State& state) {
-	const std::vector<double> X{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-	const std::vector<double> Y{0, 1, 4, 9, 16, 25, 36, 49, 64, 81};
+	std::vector<double> result;
 	for (auto _ : state) {
-		benchmark::DoNotOptimize(alfi::poly::lagrange(X, Y));
+		result = alfi::poly::val(coeffs, xx);
+		benchmark::DoNotOptimize(result);
+		benchmark::ClobberMemory();
 	}
 }
-BENCHMARK(BM_lagrange);
+BENCHMARK(BM_val_vector)->Ranges({{1 << 6, 1 << 12}, {1 << 6, 1 << 12}});
 
-static void BM_lagrange_vals(benchmark::State& state) {
-	const std::vector<double> X{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-	const std::vector<double> Y{0, 1, 4, 9, 16, 25, 36, 49, 64, 81};
-	std::vector<double> xx(1000);
-	for (std::size_t i = 0; i < xx.size(); ++i) {
-		xx[i] = 0.0 + i * 0.009;
-	}
+template <auto interp>
+static void BM_interp_poly(benchmark::State& state) {
+	const auto& [func_name, lambda] = funcs_and_ints[state.range(0)].first;
+	const auto& interval = funcs_and_ints[state.range(0)].second;
+	const auto& dist_type = dists[state.range(1)];
+	const auto& n = state.range(2);
+	const auto& nn = state.range(3);
+	const std::vector<double> X = of_type<double>(dist_type, n, interval.first, interval.second);
+	const std::vector<double> Y = apply_func(X, lambda);
+	std::vector<double> coeffs;
 	for (auto _ : state) {
-		benchmark::DoNotOptimize(alfi::poly::lagrange_vals(X, Y, xx));
+		coeffs = interp(X, Y);
+		benchmark::DoNotOptimize(coeffs);
+		benchmark::ClobberMemory();
 	}
+	const std::vector<double> xx = of_type<double>(dist_type, nn, interval.first, interval.second);
+	const std::vector<double> yy = apply_func(xx, lambda);
+	const std::vector<double> result = alfi::poly::val(coeffs, xx);
+	const std::vector<double> error = alfi::util::arrays::sub(result, yy);
+	state.counters["1.ME"] = alfi::util::stat::mean(error);
+	state.counters["2.MAE"] = alfi::util::stat::mean_abs(error);
+	state.counters["3.RMSE"] = alfi::util::stat::rms(error);
+	state.counters["4.Variance"] = alfi::util::stat::var(error);
 }
-BENCHMARK(BM_lagrange_vals);
 
-static void BM_imp_lagrange(benchmark::State& state) {
-	const std::vector<double> X{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-	const std::vector<double> Y{0, 1, 4, 9, 16, 25, 36, 49, 64, 81};
+template <auto interp>
+static void BM_interp_poly_vals(benchmark::State& state) {
+	const auto& [func_name, lambda] = funcs_and_ints[state.range(0)].first;
+	const auto& interval = funcs_and_ints[state.range(0)].second;
+	const auto& dist_type = dists[state.range(1)];
+	const auto& n = state.range(2);
+	const auto& nn = state.range(3);
+	const std::vector<double> X = of_type<double>(dist_type, n, interval.first, interval.second);
+	const std::vector<double> Y = apply_func(X, lambda);
+	const std::vector<double> xx = of_type<double>(dist_type, nn, interval.first, interval.second);
+	std::vector<double> result;
 	for (auto _ : state) {
-		benchmark::DoNotOptimize(alfi::poly::imp_lagrange(X, Y));
+		result = interp(X, Y, xx);
+		benchmark::DoNotOptimize(result);
+		benchmark::ClobberMemory();
 	}
+	const std::vector<double> yy = apply_func(xx, lambda);
+	const std::vector<double> error = alfi::util::arrays::sub(result, yy);
+	state.counters["1.ME"] = alfi::util::stat::mean(error);
+	state.counters["2.MAE"] = alfi::util::stat::mean_abs(error);
+	state.counters["3.RMSE"] = alfi::util::stat::rms(error);
+	state.counters["4.Variance"] = alfi::util::stat::var(error);
 }
-BENCHMARK(BM_imp_lagrange);
 
+// need special function for `imp_lagrange_vals` because of the fourth parameter
 static void BM_imp_lagrange_vals(benchmark::State& state) {
-	const std::vector<double> X{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-	const std::vector<double> Y{0, 1, 4, 9, 16, 25, 36, 49, 64, 81};
-	std::vector<double> xx(1000);
-	for (std::size_t i = 0; i < xx.size(); ++i) {
-		xx[i] = 0.0 + i * 0.009;
-	}
-	double epsilon = std::numeric_limits<double>::epsilon();
+	const auto& [func_name, lambda] = funcs_and_ints[state.range(0)].first;
+	const auto& interval = funcs_and_ints[state.range(0)].second;
+	const auto& dist_type = dists[state.range(1)];
+	const auto& n = state.range(2);
+	const auto& nn = state.range(3);
+	const std::vector<double> X = of_type<double>(dist_type, n, interval.first, interval.second);
+	const std::vector<double> Y = apply_func(X, lambda);
+	const std::vector<double> xx = of_type<double>(dist_type, nn, interval.first, interval.second);
+	std::vector<double> result;
 	for (auto _ : state) {
-		benchmark::DoNotOptimize(alfi::poly::imp_lagrange_vals(X, Y, xx, epsilon));
+		result = alfi::poly::imp_lagrange_vals(X, Y, xx);
+		benchmark::DoNotOptimize(result);
+		benchmark::ClobberMemory();
 	}
+	const std::vector<double> yy = apply_func(xx, lambda);
+	const std::vector<double> error = alfi::util::arrays::sub(result, yy);
+	state.counters["1.ME"] = alfi::util::stat::mean(error);
+	state.counters["2.MAE"] = alfi::util::stat::mean_abs(error);
+	state.counters["3.RMSE"] = alfi::util::stat::rms(error);
+	state.counters["4.Variance"] = alfi::util::stat::var(error);
 }
-BENCHMARK(BM_imp_lagrange_vals);
 
-static void BM_newton(benchmark::State& state) {
-	const std::vector<double> X{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-	const std::vector<double> Y{0, 1, 4, 9, 16, 25, 36, 49, 64, 81};
-	for (auto _ : state) {
-		benchmark::DoNotOptimize(alfi::poly::newton(X, Y));
+struct PolyBenchmarkRegistrar {
+	PolyBenchmarkRegistrar() {
+		const std::vector<std::pair<std::string, std::function<void(benchmark::State&)>>> regsPoly = {
+			{"BM_lagrange", [](benchmark::State& state) { BM_interp_poly<alfi::poly::lagrange<>>(state); }},
+			{"BM_imp_lagrange", [](benchmark::State& state) { BM_interp_poly<alfi::poly::imp_lagrange<>>(state); }},
+			{"BM_newton", [](benchmark::State& state) { BM_interp_poly<alfi::poly::newton<>>(state); }},
+			{"BM_lagrange_vals", [](benchmark::State& state) { BM_interp_poly_vals<alfi::poly::lagrange_vals<>>(state); }},
+			{"BM_imp_lagrange_vals", BM_imp_lagrange_vals},
+			{"BM_newton_vals", [](benchmark::State& state) { BM_interp_poly_vals<alfi::poly::newton_vals<>>(state); }},
+		};
+		for (const auto& [name, function] : regsPoly) {
+			RegisterBenchmark(name, function)
+				->ArgsProduct({
+					benchmark::CreateDenseRange(0, static_cast<int64_t>(funcs_and_ints.size()) - 1, 1),
+					benchmark::CreateDenseRange(0, static_cast<int64_t>(dists.size()) - 1, 1),
+					benchmark::CreateRange(8, 32, 2),
+					{nn}
+				})
+				->ArgNames({"func", "dist", "n", "nn"});
+		}
 	}
-}
-BENCHMARK(BM_newton);
+};
 
-static void BM_newton_vals(benchmark::State& state) {
-	const std::vector<double> X{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-	const std::vector<double> Y{0, 1, 4, 9, 16, 25, 36, 49, 64, 81};
-	std::vector<double> xx(1000);
-	for (std::size_t i = 0; i < xx.size(); ++i) {
-		xx[i] = 0.0 + i * 0.009;
-	}
-	for (auto _ : state) {
-		benchmark::DoNotOptimize(alfi::poly::newton_vals(X, Y, xx));
-	}
-}
-BENCHMARK(BM_newton_vals);
-
-BENCHMARK_MAIN();
+[[maybe_unused]] const PolyBenchmarkRegistrar poly_benchmark_registrar;

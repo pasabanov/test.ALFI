@@ -9,6 +9,7 @@ add_subdirectory(deps/benchmark)
 set(CMAKE_BUILD_TYPE "${ORIGINAL_CMAKE_BUILD_TYPE}")
 
 add_executable(benchmarks
+	bench_main.cpp
 	poly/bench_poly.cpp)
 target_link_libraries(benchmarks PRIVATE ALFI benchmark::benchmark)
 
