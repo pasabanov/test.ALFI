@@ -1,5 +1,3 @@
-#include <vector>
-
 #include <benchmark/benchmark.h>
 
 #include <ALFI/poly.h>
