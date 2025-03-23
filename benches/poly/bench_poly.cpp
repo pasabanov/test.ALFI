@@ -23,7 +23,6 @@ static void BM_val_scalar(benchmark::State& state) {
 		benchmark::ClobberMemory();
 	}
 }
-BENCHMARK(BM_val_scalar)->Range(1 << 3, 1 << 12);
 
 static void BM_val_vector(benchmark::State& state) {
 	std::vector<double> coeffs(state.range(0));
@@ -41,7 +40,6 @@ static void BM_val_vector(benchmark::State& state) {
 		benchmark::ClobberMemory();
 	}
 }
-BENCHMARK(BM_val_vector)->Ranges({{1 << 6, 1 << 12}, {1 << 6, 1 << 12}});
 
 template <auto interp>
 static void BM_interp_poly(benchmark::State& state) {
@@ -116,8 +114,11 @@ static void BM_imp_lagrange_vals(benchmark::State& state) {
 	state.counters["4.Variance"] = alfi::util::stat::var(error);
 }
 
-struct PolyBenchmarkRegistrar {
-	PolyBenchmarkRegistrar() {
+struct BenchmarkRegistrar {
+	BenchmarkRegistrar() {
+		RegisterBenchmark("BM_val_scalar", BM_val_scalar)->Range(1 << 3, 1 << 12);
+		RegisterBenchmark("BM_val_vector", BM_val_vector)->Ranges({{1 << 6, 1 << 12}, {1 << 6, 1 << 12}});
+
 		const std::vector<std::pair<std::string, std::function<void(benchmark::State&)>>> regsPoly = {
 			{"BM_lagrange", [](benchmark::State& state) { BM_interp_poly<alfi::poly::lagrange<>>(state); }},
 			{"BM_imp_lagrange", [](benchmark::State& state) { BM_interp_poly<alfi::poly::imp_lagrange<>>(state); }},
@@ -139,4 +140,4 @@ struct PolyBenchmarkRegistrar {
 	}
 };
 
-[[maybe_unused]] const PolyBenchmarkRegistrar poly_benchmark_registrar;
+[[maybe_unused]] const BenchmarkRegistrar registrar;
