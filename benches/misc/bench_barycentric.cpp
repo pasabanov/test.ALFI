@@ -29,6 +29,7 @@ static void BM_barycentric(benchmark::State& state) {
 	state.counters["3.RMSE"] = alfi::util::stat::rms(error);
 	state.counters["4.Variance"] = alfi::util::stat::var(error);
 }
+
 BENCHMARK(BM_barycentric)
 	->ArgsProduct({
 		benchmark::CreateDenseRange(0, static_cast<int64_t>(funcs_and_ints.size()) - 1, 1),
@@ -36,7 +37,7 @@ BENCHMARK(BM_barycentric)
 		benchmark::CreateRange(8, 32, 2),
 		{nn}
 	})
-->ArgNames({"func", "dist", "n", "nn"});
+	->ArgNames({"func", "dist", "n", "nn"});
 
 BENCHMARK(BM_barycentric)
 	->Name("BM_barycentric_chebyshev")
@@ -46,7 +47,7 @@ BENCHMARK(BM_barycentric)
 		benchmark::CreateRange(1 << 6, 1 << 21, 1 << 3),
 		{nn}
 	})
-->ArgNames({"func", "dist", "n", "nn"});
+	->ArgNames({"func", "dist", "n", "nn"});
 
 BENCHMARK(BM_barycentric)
 	->Name("BM_barycentric_chebyshev_2")

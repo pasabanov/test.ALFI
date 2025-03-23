@@ -111,32 +111,34 @@ static void BM_imp_lagrange_vals(benchmark::State& state) {
 	state.counters["4.Variance"] = alfi::util::stat::var(error);
 }
 
-struct BenchmarkRegistrar {
-	BenchmarkRegistrar() {
-		RegisterBenchmark("BM_val_scalar", BM_val_scalar)->Range(1 << 3, 1 << 12);
-		RegisterBenchmark("BM_val_vector", BM_val_vector)->Ranges({{1 << 6, 1 << 12}, {1 << 6, 1 << 12}});
+namespace {
+	struct BenchmarkRegistrar {
+		BenchmarkRegistrar() {
+			RegisterBenchmark("BM_val_scalar", BM_val_scalar)->Range(1 << 3, 1 << 12);
+			RegisterBenchmark("BM_val_vector", BM_val_vector)->Ranges({{1 << 6, 1 << 12}, {1 << 6, 1 << 12}});
 
-		const std::vector<std::pair<std::string, std::function<void(benchmark::State&)>>> regsPoly = {
-			{"BM_lagrange", [](benchmark::State& state) { BM_interp_poly<alfi::poly::lagrange<>>(state); }},
-			{"BM_imp_lagrange", [](benchmark::State& state) { BM_interp_poly<alfi::poly::imp_lagrange<>>(state); }},
-			{"BM_newton", [](benchmark::State& state) { BM_interp_poly<alfi::poly::newton<>>(state); }},
-			{"BM_lagrange_vals", [](benchmark::State& state) { BM_interp_poly_vals<alfi::poly::lagrange_vals<>>(state); }},
-			{"BM_imp_lagrange_vals", BM_imp_lagrange_vals},
-			{"BM_newton_vals", [](benchmark::State& state) { BM_interp_poly_vals<alfi::poly::newton_vals<>>(state); }},
-		};
-		for (const auto& [name, function] : regsPoly) {
-			RegisterBenchmark(name, function)
-				->ArgsProduct({
-					benchmark::CreateDenseRange(0, static_cast<int64_t>(funcs_and_ints.size()) - 1, 1),
-					benchmark::CreateDenseRange(0, static_cast<int64_t>(dists.size()) - 1, 1),
-					benchmark::CreateRange(8, 32, 2),
-					{nn}
-				})
-				->ArgNames({"func", "dist", "n", "nn"});
+			const std::vector<std::pair<std::string, std::function<void(benchmark::State&)>>> regsPoly = {
+				{"BM_lagrange", [](benchmark::State& state) { BM_interp_poly<alfi::poly::lagrange<>>(state); }},
+				{"BM_imp_lagrange", [](benchmark::State& state) { BM_interp_poly<alfi::poly::imp_lagrange<>>(state); }},
+				{"BM_newton", [](benchmark::State& state) { BM_interp_poly<alfi::poly::newton<>>(state); }},
+				{"BM_lagrange_vals", [](benchmark::State& state) { BM_interp_poly_vals<alfi::poly::lagrange_vals<>>(state); }},
+				{"BM_imp_lagrange_vals", BM_imp_lagrange_vals},
+				{"BM_newton_vals", [](benchmark::State& state) { BM_interp_poly_vals<alfi::poly::newton_vals<>>(state); }},
+			};
+			for (const auto& [name, function] : regsPoly) {
+				RegisterBenchmark(name, function)
+					->ArgsProduct({
+						benchmark::CreateDenseRange(0, static_cast<int64_t>(funcs_and_ints.size()) - 1, 1),
+						benchmark::CreateDenseRange(0, static_cast<int64_t>(dists.size()) - 1, 1),
+						benchmark::CreateRange(8, 32, 2),
+						{nn}
+					})
+					->ArgNames({"func", "dist", "n", "nn"});
+			}
 		}
-	}
-};
+	};
 
-[[maybe_unused]] const BenchmarkRegistrar registrar;
+	[[maybe_unused]] const BenchmarkRegistrar registrar;
+}
 
 BENCHMARK_MAIN();
