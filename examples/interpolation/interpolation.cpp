@@ -11,7 +11,7 @@ QVector<T> to_qvector(const std::vector<T>& v) {
 
 double f(double x) {
 	// return -3 * std::sin(10 * x) + std::abs(x) + 0.5 * x - x * x; // example 1
-	return -3 * std::sin(10 * x) + 10 * sin(std::abs(x) + 0.5 * x); // example 2
+	return -3 * std::sin(10 * x) + 10 * std::sin(std::abs(x) + 0.5 * x); // example 2
 	// return std::sin(3 * M_PI * x) + std::cos(M_PI * x / 5); // periodic
 	// return 1/(1+std::exp(-10000*(x-1))) - 1/(1+std::exp(-10000*(x+1))); // high local second derivative
 }

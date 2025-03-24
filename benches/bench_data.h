@@ -25,7 +25,7 @@ const std::vector<std::pair<Function, Interval>> funcs_and_ints = {
 	{{"sin", [](double x) { return std::sin(x); }}, {-M_PI, M_PI}},
 	{{"cos", [](double x) { return std::cos(x); }}, {-M_PI, M_PI}},
 	{{"f1", [](double x) { return std::abs(x) + x/2 - x*x; }}, {-1, 1}},
-	{{"f2", [](double x) { return -3*std::sin(10*x) + 10*sin(std::abs(x) + x/2); }}, {-10, 10}},
+	{{"f2", [](double x) { return -3*std::sin(10*x) + 10*std::sin(std::abs(x) + x/2); }}, {-10, 10}},
 };
 
 const std::vector<alfi::dist::Type> dists = {
