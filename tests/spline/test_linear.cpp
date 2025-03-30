@@ -36,8 +36,6 @@ TEST(LinearSplineTest, General) {
 		// exact points
 		EXPECT_EQ(spline(X[i]), Y[i]);
 		EXPECT_EQ(spline(X[i+1]), Y[i+1]);
-		EXPECT_EQ(spline(X[i]), Y[i]);
-		EXPECT_EQ(spline(X[i+1]), Y[i+1]);
 		// between points
 		EXPECT_DOUBLE_EQ(spline(X[i] + epsilon), Y[i] + epsilon * (Y[i+1] - Y[i]));
 		EXPECT_DOUBLE_EQ(spline((X[i]+X[i+1])/2), (Y[i] + Y[i+1])/2);
