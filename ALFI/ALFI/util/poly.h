@@ -9,12 +9,11 @@ namespace alfi::util::poly {
 	/**
 		@brief Normalizes a polynomial by removing leading coefficients close to zero.
 
-		This function trims coefficients from the beginning of the polynomial that are smaller than a given threshold \p epsilon.
-		If the polynomial becomes empty after trimming, it adds to the container a single zero.
+		This function removes coefficients from the beginning of the polynomial (i.e. from the highest degree)
+		that are smaller than a given threshold \p epsilon. If all coefficients are removed, a single zero is added.
 
 		@param p the polynomial to normalize (a container of coefficients)
 		@param epsilon the threshold to treat coefficients as zero (default is machine epsilon)
-		@return the normalized polynomial with leading zero coefficients removed
 	 */
 	template <typename Number = DefaultNumber, template <typename, typename...> class Container = DefaultContainer>
 	void normalize(Container<Number>& p, Number epsilon = std::numeric_limits<Number>::epsilon()) {
@@ -33,12 +32,12 @@ namespace alfi::util::poly {
 	/**
 		@brief Multiplies two polynomials.
 
-		Given two polynomials \f(p_1\f) and \f(p_2\f), represented as containers of coefficients in descending order,
+		Given two polynomials \f(p_1\f) and \f(p_2\f) represented as containers of coefficients,
 		this function computes their product using the standard convolution formula:
 		\f[
-			(p_1 \cdot p_2)[k] = \sum_{i+j=k} p_1[i] p_2[j]
+			(p_1 \cdot p_2)[k] = \sum_{i+j=k} p_1[i]\,p_2[j]
 		\f]
-		where indices correspond to powers of the variable.
+		where the index corresponds to the degree of the resulting term.
 
 		If either polynomial is empty, the function returns an empty container.
 
@@ -63,16 +62,16 @@ namespace alfi::util::poly {
 	/**
 		@brief Performs polynomial division.
 
-		This function divides the polynomial \f(D\f) (dividend) by the polynomial \f(d\f) (divisor),
-		returning the quotient \f(Q\f) and remainder \f(R\f) such that:
+		This function divides the dividend polynomial \f(A\f) by the divisor polynomial \f(B\f)
+		(whose coefficients are in descending order), and returns the quotient \f(Q\f) and the remainder \f(R\f)
+		such that:
 		\f[
-			D(x) = Q(x) \cdot d(x) + R(x)
+			A(x) = B(X) \cdot Q(x) + R(x)
 		\f]
-		with \f(deg(R) < deg(d)\f) or \f(R = 0\f).
+		with \f(deg(R) < deg(B)\f).
 
-		Polynomials are represented as containers of coefficients in descending order.
-		If the divisor is the zero polynomial, the function returns an empty quotient
-		and the original dividend as the remainder.
+		If the divisor is the zero polynomial (i.e. the container is empty or all its coefficients are below \p epsilon)
+		or if the dividend has a lower degree than the divisor, the function returns an empty quotient and the original dividend as remainder.
 
 		@param dividend the polynomial to be divided
 		@param divisor the polynomial to divide by
@@ -105,6 +104,28 @@ namespace alfi::util::poly {
 		return {quotient, remainder};
 	}
 
+	/**
+		@brief Computes the extended Euclidean algorithm for polynomials.
+
+		This function implements the extended Euclidean algorithm for polynomials, returning a tuple containing
+		the greatest common divisor \f(r)\f (gcd) and the Bézout coefficients \f(s)\f and \f(t)\f such that:
+		\f[
+			a \cdot s + b \cdot t = r
+		\f]
+		where \f(a\f) and \f(b\f) are the input polynomials.
+
+		The algorithm works with polynomials represented as containers of coefficients in descending order.
+		The computation continues while the remainder \f(r)\f is non-empty and not equal (up to \p epsilon)
+		to the zero polynomial (represented as a container with a single element close to zero).
+
+		Note that the implementation avoids using separate normalization calls by checking that \f(r)\f is non-empty
+		and not equivalent to zero in the loop condition.
+
+		@param a the first polynomial (dividend)
+		@param b the second polynomial (divisor)
+		@param epsilon a threshold for treating coefficients as zero (default is machine epsilon)
+		@return a tuple {r, s, t} where \f(r = \gcd(a, b)\f) and the Bézout identity \f(a \cdot s + b \cdot t = r\f) holds.
+	*/
 	template <typename Number = DefaultNumber, template <typename, typename...> class Container = DefaultContainer>
 	std::tuple<Container<Number>,Container<Number>,Container<Number>>
 	extended_euclid(const Container<Number>& a, const Container<Number>& b, Number epsilon = std::numeric_limits<Number>::epsilon()) {
