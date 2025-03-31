@@ -27,3 +27,6 @@ add_test_executable(test_step spline/test_step.cpp)
 add_test_executable(test_linear spline/test_linear.cpp)
 add_test_executable(test_quadratic spline/test_quadratic.cpp)
 add_test_executable(test_cubic spline/test_cubic.cpp)
+
+add_executable(test_ratf ratf/test_ratf.cpp)
+target_link_libraries(test_ratf ALFI)
