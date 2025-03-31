@@ -1,10 +1,8 @@
 #pragma once
 
-#include <iostream>
 #include <cmath>
 
 #include "config.h"
-#include "util/linalg.h"
 #include "util/numeric.h"
 #include "util/poly.h"
 
@@ -97,90 +95,45 @@ namespace alfi::ratf {
 		return result;
 	}
 
+	/**
+		@brief Computes the Padé approximation of a given power series.
+
+		This function constructs a Padé approximant \f(R(x) = P_n(x) / Q_m(x)\f) for a given power series
+		represented by its coefficients \f(P\f). The approximant is determined by finding polynomials
+		\f(P_n\f) and \f(Q_m\f) of degrees at most \f(n\f) and \f(m\f), respectively, such that:
+
+		\f[
+			Q_m(x) \cdot \sum_{k=0}^{n+m} P_k x^k - P_n(x) = \mathcal{O}(x^{n+m+1})
+		\f]
+
+		To achieve this, the algorithm solves a linear system using the extended Euclidean algorithm for polynomials.
+		The resulting polynomials \f(P_n\f) and \f(Q_m\f) are guaranteed to be normalized (i.e., leading coefficients are nonzero).
+
+		If no valid Padé approximation can be found (e.g., due to a degenerate system), the function returns empty polynomials.
+
+		@param P The power series coefficients in descending order (from highest to lowest degree).
+		@param n The desired degree of the numerator polynomial \f(P_n\f).
+		@param m The desired degree of the denominator polynomial \f(Q_m\f).
+		@param epsilon A threshold for numerical stability when determining polynomial degree (default: machine epsilon).
+		@return A rational function \f(P_n(x) / Q_m(x)\f), or an empty result \f({}, {}\f) if the approximation is not possible.
+	*/
 	template <typename Number = DefaultNumber, template <typename, typename...> class Container = DefaultContainer>
 	RationalFunction<Number,Container> pade(const Container<Number>& P, SizeT n, SizeT m, Number epsilon = std::numeric_limits<Number>::epsilon()) {
-		// Step 1: Generate Taylor series coefficients for f(x) up to degree m + n
-		Container<Number> T(P.begin(), P.end());
-		const size_t targetSize = m + n + 1;
-		T.resize(targetSize, 0); // Ensure the size is m + n + 1
-
-		// Step 2: Initialize polynomials P(x) and Q(x)
-		Container<Number> A(m + 1, 0), B(n + 1, 0);
-
-		// Set P(x) = Taylor series coefficients up to degree m
-		for (size_t i = 0; i <= m; ++i) {
-			if (i < T.size()) A[i] = T[i];
+		if (P.size() < n + m + 1) {
+			Container<Number> P1 = P;
+			P1.insert(P1.begin(), n + m + 1 - P.size(), 0);
+			return pade(P1, n, m, epsilon);
 		}
 
-		// Set Q(x) = Taylor series coefficients for the denominator, starting at 1 (for the 0th coefficient of the denominator)
-		B[0] = 1;
-		for (size_t i = 1; i <= n; ++i) {
-			if (i < T.size()) B[i] = -T[i];
+		Container<Number> Xmn1(n + m + 2, 0);
+		Xmn1[0] = 1;
+
+		auto [r, _, t] = util::poly::extended_euclid(Xmn1, P, epsilon, n);
+
+		if (r.size() > n + 1 || t.size() > m + 1) {
+			return {{}, {}};
 		}
 
-		// Step 3: Use the extended Euclidean algorithm to refine P(x) and Q(x)
-		auto [gcd, s, t] = util::poly::extended_euclid(A, B, epsilon);
-
-		// Return the polynomials P(x) and Q(x)
-		return {A, B};
-		// if (m == 0) {
-		// 	return {P, {static_cast<Number>(1)}};
-		// }
-		// const static auto get_or_0 = [](const Container<Number>& arr, SizeT index) -> Number {
-		// 	return 0 <= index && index < arr.size() ? arr[index] : static_cast<Number>(0);
-		// };
-		// Container<Number> B(m + 1);
-		// B[0] = 1;
-		// // I. Evaluating B
-		// // Matrix
-		// Container<Container<Number>> M(m);
-		// // Right-hand side
-		// Container<Number> R(m);
-		// // Filling system of equations
-		// for (SizeT row = 0; row < m; ++row) {
-		// 	R[row] = -get_or_0(P, n + 1 + row);
-		// 	M[row].resize(m);
-		// 	for (SizeT col = 0; col < m; ++col) {
-		// 		M[row][col] = get_or_0(P, n + row - col);
-		// 	}
-		// }
-		// // Removing zeroed rows
-		// for (SizeT row_iter = 0; row_iter < m; ++row_iter) {
-		// 	const auto row = m - 1 - row_iter;
-		// 	bool all_zero = true;
-		// 	if (std::abs(R[row]) < epsilon) {
-		// 		for (SizeT col = 0; col < m; ++col) {
-		// 			if (std::abs(M[row][col]) >= epsilon) {
-		// 				all_zero = false;
-		// 				break;
-		// 			}
-		// 		}
-		// 	}
-		// 	if (!all_zero) {
-		// 		break;
-		// 	}
-		// 	B[row] = 0;
-		// 	M.pop_back();
-		// 	for (auto& r : M) {
-		// 		r.pop_back();
-		// 	}
-		// 	R.pop_back();
-		// }
-		// // Solving system of equations
-		// auto X = util::linalg::lup_solve(std::move(M), std::move(R), epsilon);
-		// if (X.empty()) {
-		// 	std::cout << "Failed to construct Pade approximation" << std::endl;
-		// 	return {{}, {}};
-		// }
-		// std::move(X.begin(), X.end(), B.begin() + 1);
-		// Container<Number> A(n + 1);
-		// // II. Evaluating A
-		// for (SizeT i = 0; i < A.size(); ++i) {
-		// 	A[i] = get_or_0(P, i);
-		// 	for (SizeT j = 1; j <= i; ++j) {
-		// 		A[i] += get_or_0(B, j - 1) * get_or_0(P, i - j);
-		// 	}
-		// }
-		// return {A, B};
+		return RationalFunction<Number,Container>(std::move(r), std::move(t));
 	}
 }

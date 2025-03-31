@@ -89,18 +89,21 @@ namespace alfi::util::poly {
 
 		const auto divisor_start_idx = divisor_start - divisor.begin();
 
-		Container<Number> quotient(dividend.size() - divisor.size() + 1, 0);
+		const auto n = dividend.size();
+		const auto m = divisor.size() - divisor_start_idx;
+
+		Container<Number> quotient(n - m + 1, 0);
 		Container<Number> remainder = dividend;
 
-		for (SizeT i = 0; i <= dividend.size() - divisor.size(); ++i) {
+		for (SizeT i = 0; i <= n - m; ++i) {
 			const Number factor = remainder[i] / divisor[divisor_start_idx];
 			quotient[i] = factor;
-			for (SizeT j = 0; j < divisor.size(); ++j) {
+			for (SizeT j = 0; j < m; ++j) {
 				remainder[i+j] -= factor * divisor[divisor_start_idx+j];
 			}
 		}
 
-		remainder.erase(remainder.begin(), remainder.end() - divisor.size() + 1);
+		remainder.erase(remainder.begin(), remainder.end() - m + 1);
 		return {quotient, remainder};
 	}
 
@@ -108,27 +111,32 @@ namespace alfi::util::poly {
 		@brief Computes the extended Euclidean algorithm for polynomials.
 
 		This function implements the extended Euclidean algorithm for polynomials, returning a tuple containing
-		the greatest common divisor \f(r)\f (gcd) and the Bézout coefficients \f(s)\f and \f(t)\f such that:
+		the greatest common divisor \f(r\f) (gcd) and the Bézout coefficients \f(s\f) and \f(t\f) such that:
 		\f[
 			a \cdot s + b \cdot t = r
 		\f]
 		where \f(a\f) and \f(b\f) are the input polynomials.
 
 		The algorithm works with polynomials represented as containers of coefficients in descending order.
-		The computation continues while the remainder \f(r)\f is non-empty and not equal (up to \p epsilon)
+		The computation continues while the remainder \f(r\f) is non-empty and not equal (up to \p epsilon)
 		to the zero polynomial (represented as a container with a single element close to zero).
 
-		Note that the implementation avoids using separate normalization calls by checking that \f(r)\f is non-empty
-		and not equivalent to zero in the loop condition.
+		The function always returns normalized polynomials (see \ref normalize).
 
 		@param a the first polynomial (dividend)
 		@param b the second polynomial (divisor)
 		@param epsilon a threshold for treating coefficients as zero (default is machine epsilon)
+		@param min_r_degree the minimum degree of the remainder polynomial \f(r\f) to continue the loop
 		@return a tuple {r, s, t} where \f(r = \gcd(a, b)\f) and the Bézout identity \f(a \cdot s + b \cdot t = r\f) holds.
 	*/
 	template <typename Number = DefaultNumber, template <typename, typename...> class Container = DefaultContainer>
 	std::tuple<Container<Number>,Container<Number>,Container<Number>>
-	extended_euclid(const Container<Number>& a, const Container<Number>& b, Number epsilon = std::numeric_limits<Number>::epsilon()) {
+	extended_euclid(
+			const Container<Number>& a,
+			const Container<Number>& b,
+			Number epsilon = std::numeric_limits<Number>::epsilon(),
+			SizeT min_r_degree = 0
+	) {
 		Container<Number> old_r = a;
 		Container<Number> r = b;
 
@@ -137,11 +145,17 @@ namespace alfi::util::poly {
 		Container<Number> old_t = {0};
 		Container<Number> t = {1};
 
-		while (!r.empty() && !(r.size() == 1 && std::abs(r[0]) < epsilon)) {
-			const auto [q, new_r] = div(old_r, r, epsilon);
+		normalize(old_r);
+		normalize(r);
 
-			old_r = std::move(r);
-			r = std::move(new_r);
+		if (old_r.size() < r.size()) {
+			std::swap(old_r, r);
+			std::swap(old_s, s);
+			std::swap(old_t, t);
+		}
+
+		while (!(r.size() == 1 && std::abs(r[0]) < epsilon) && r.size() >= min_r_degree + 1) {
+			auto [q, new_r] = div(old_r, r, epsilon);
 
 			const Container<Number> qs = mul(q, s);
 			const auto new_s_size = std::max(old_s.size(), qs.size());
@@ -163,10 +177,19 @@ namespace alfi::util::poly {
 				new_t[offset+i] -= qt[i];
 			}
 
+			old_r = std::move(r);
+			r = std::move(new_r);
 			old_s = std::move(s);
 			s = std::move(new_s);
 			old_t = std::move(t);
 			t = std::move(new_t);
+
+			normalize(old_r);
+			normalize(r);
+			normalize(old_s);
+			normalize(s);
+			normalize(old_t);
+			normalize(t);
 		}
 
 		return std::make_tuple(old_r, old_s, old_t);
