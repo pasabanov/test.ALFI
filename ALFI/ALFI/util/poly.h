@@ -106,74 +106,48 @@ namespace alfi::util::poly {
 	}
 
 	template <typename Number = DefaultNumber, template <typename, typename...> class Container = DefaultContainer>
-	std::tuple<Container<Number>,Container<Number>,Container<Number>> extended_euclid(const Container<Number>& a, const Container<Number>& b, Number epsilon = std::numeric_limits<Number>::epsilon()) {
-		// Копии входных многочленов
+	std::tuple<Container<Number>,Container<Number>,Container<Number>>
+	extended_euclid(const Container<Number>& a, const Container<Number>& b, Number epsilon = std::numeric_limits<Number>::epsilon()) {
 		Container<Number> old_r = a;
 		Container<Number> r = b;
 
-		// Начальные коэффициенты Bézout'а
 		Container<Number> old_s = {1};
 		Container<Number> s = {0};
 		Container<Number> old_t = {0};
 		Container<Number> t = {1};
 
-		// Нормализуем входные многочлены
-		// normalize(old_r, epsilon);
-		// normalize(r, epsilon);
-
-		// Основной цикл алгоритма
-		// Если r равен нулевому многочлену (представленному как {0}), то завершаем цикл
 		while (!r.empty() && !(r.size() == 1 && std::abs(r[0]) < epsilon)) {
-			// Делим old_r на r: old_r = q * r + remainder
-			auto [q, rem] = div(old_r, r, epsilon);
+			const auto [q, new_r] = div(old_r, r, epsilon);
 
-			// Обновляем (old_r, r): (old_r, r) := (r, rem)
 			old_r = std::move(r);
-			r = std::move(rem);
-			// Если r оказался пустым, нормализуем его до {0}
-			// normalize(r, epsilon);
+			r = std::move(new_r);
 
-			// Вычисляем новое s: new_s = old_s - q * s
-			Container<Number> qs = mul(q, s);
-			auto new_size = std::max(old_s.size(), qs.size());
-			Container<Number> new_s(new_size, 0);
-			auto offset = new_size - old_s.size();
-			for (SizeT i = 0; i < old_s.size(); ++i) {
-				new_s[offset + i] = old_s[i];
+			const Container<Number> qs = mul(q, s);
+			const auto new_s_size = std::max(old_s.size(), qs.size());
+			Container<Number> new_s(new_s_size, 0);
+			for (SizeT i = 0, offset = new_s_size - old_s.size(); i < old_s.size(); ++i) {
+				new_s[offset+i] = old_s[i];
 			}
-			offset = new_size - qs.size();
-			for (SizeT i = 0; i < qs.size(); ++i) {
-				new_s[offset + i] -= qs[i];
+			for (SizeT i = 0, offset = new_s_size - qs.size(); i < qs.size(); ++i) {
+				new_s[offset+i] -= qs[i];
 			}
 
-			// Аналогично для t: new_t = old_t - q * t
-			Container<Number> qt = mul(q, t);
-			new_size = std::max(old_t.size(), qt.size());
-			Container<Number> new_t(new_size, 0);
-			offset = new_size - old_t.size();
-			for (SizeT i = 0; i < old_t.size(); ++i) {
-				new_t[offset + i] = old_t[i];
+			const Container<Number> qt = mul(q, t);
+			const auto new_t_size = std::max(old_t.size(), qt.size());
+			Container<Number> new_t(new_t_size, 0);
+			for (SizeT i = 0, offset = new_t_size - old_t.size(); i < old_t.size(); ++i) {
+				new_t[offset+i] = old_t[i];
 			}
-			offset = new_size - qt.size();
-			for (SizeT i = 0; i < qt.size(); ++i) {
-				new_t[offset + i] -= qt[i];
+			for (SizeT i = 0, offset = new_t_size - qt.size(); i < qt.size(); ++i) {
+				new_t[offset+i] -= qt[i];
 			}
 
-			// Обновляем s и t: (old_s, s) := (s, new_s) и (old_t, t) := (t, new_t)
 			old_s = std::move(s);
 			s = std::move(new_s);
 			old_t = std::move(t);
 			t = std::move(new_t);
-
-			// Нормализуем s и t
-			// normalize(s, epsilon);
-			// normalize(t, epsilon);
 		}
 
-		// По завершении алгоритма old_r содержит gcd, а old_s и old_t – коэффициенты Bézout'а.
-		// normalize(old_r, epsilon);
-		// normalize(old_s, epsilon);
-		// normalize(old_t, epsilon);
 		return std::make_tuple(old_r, old_s, old_t);
 	}
 }
