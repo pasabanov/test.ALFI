@@ -107,27 +107,23 @@ namespace alfi::util::poly {
 
 	template <typename Number = DefaultNumber, template <typename, typename...> class Container = DefaultContainer>
 	std::tuple<Container<Number>,Container<Number>,Container<Number>> extended_euclid(const Container<Number>& a, const Container<Number>& b, Number epsilon = std::numeric_limits<Number>::epsilon()) {
-		// Инициализация: представим 1 как {1} и 0 как {0}
-		Container<Number> one = {1};
-		Container<Number> zero = {0};
-
 		// Копии входных многочленов
 		Container<Number> old_r = a;
 		Container<Number> r = b;
 
 		// Начальные коэффициенты Bézout'а
-		Container<Number> old_s = one;
-		Container<Number> s = zero;
-		Container<Number> old_t = zero;
-		Container<Number> t = one;
+		Container<Number> old_s = {1};
+		Container<Number> s = {0};
+		Container<Number> old_t = {0};
+		Container<Number> t = {1};
 
 		// Нормализуем входные многочлены
-		normalize(old_r, epsilon);
-		normalize(r, epsilon);
+		// normalize(old_r, epsilon);
+		// normalize(r, epsilon);
 
 		// Основной цикл алгоритма
 		// Если r равен нулевому многочлену (представленному как {0}), то завершаем цикл
-		while (!(r.size() == 1 && std::abs(r[0]) < epsilon)) {
+		while (!r.empty() && !(r.size() == 1 && std::abs(r[0]) < epsilon)) {
 			// Делим old_r на r: old_r = q * r + remainder
 			auto [q, rem] = div(old_r, r, epsilon);
 
@@ -135,18 +131,18 @@ namespace alfi::util::poly {
 			old_r = std::move(r);
 			r = std::move(rem);
 			// Если r оказался пустым, нормализуем его до {0}
-			normalize(r, epsilon);
+			// normalize(r, epsilon);
 
 			// Вычисляем новое s: new_s = old_s - q * s
 			Container<Number> qs = mul(q, s);
-			size_t new_size = std::max(old_s.size(), qs.size());
+			auto new_size = std::max(old_s.size(), qs.size());
 			Container<Number> new_s(new_size, 0);
-			int offset = static_cast<int>(new_size) - static_cast<int>(old_s.size());
-			for (size_t i = 0; i < old_s.size(); ++i) {
+			auto offset = new_size - old_s.size();
+			for (SizeT i = 0; i < old_s.size(); ++i) {
 				new_s[offset + i] = old_s[i];
 			}
-			offset = static_cast<int>(new_size) - static_cast<int>(qs.size());
-			for (size_t i = 0; i < qs.size(); ++i) {
+			offset = new_size - qs.size();
+			for (SizeT i = 0; i < qs.size(); ++i) {
 				new_s[offset + i] -= qs[i];
 			}
 
@@ -154,12 +150,12 @@ namespace alfi::util::poly {
 			Container<Number> qt = mul(q, t);
 			new_size = std::max(old_t.size(), qt.size());
 			Container<Number> new_t(new_size, 0);
-			offset = static_cast<int>(new_size) - static_cast<int>(old_t.size());
-			for (size_t i = 0; i < old_t.size(); ++i) {
+			offset = new_size - old_t.size();
+			for (SizeT i = 0; i < old_t.size(); ++i) {
 				new_t[offset + i] = old_t[i];
 			}
-			offset = static_cast<int>(new_size) - static_cast<int>(qt.size());
-			for (size_t i = 0; i < qt.size(); ++i) {
+			offset = new_size - qt.size();
+			for (SizeT i = 0; i < qt.size(); ++i) {
 				new_t[offset + i] -= qt[i];
 			}
 
@@ -170,14 +166,14 @@ namespace alfi::util::poly {
 			t = std::move(new_t);
 
 			// Нормализуем s и t
-			normalize(s, epsilon);
-			normalize(t, epsilon);
+			// normalize(s, epsilon);
+			// normalize(t, epsilon);
 		}
 
 		// По завершении алгоритма old_r содержит gcd, а old_s и old_t – коэффициенты Bézout'а.
-		normalize(old_r, epsilon);
-		normalize(old_s, epsilon);
-		normalize(old_t, epsilon);
+		// normalize(old_r, epsilon);
+		// normalize(old_s, epsilon);
+		// normalize(old_t, epsilon);
 		return std::make_tuple(old_r, old_s, old_t);
 	}
 }
