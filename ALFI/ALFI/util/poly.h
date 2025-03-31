@@ -153,7 +153,7 @@ namespace alfi::util::poly {
 			std::swap(old_t, t);
 		}
 
-		while (!(r.size() == 1 && std::abs(r[0]) < epsilon) && r.size() >= min_r_degree + 1) {
+		while (!(r.size() == 1 && std::abs(r[0]) < epsilon) && old_r.size() > min_r_degree + 1) {
 			auto [q, new_r] = div(old_r, r, epsilon);
 
 			const Container<Number> qs = mul(q, s);
