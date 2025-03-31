@@ -126,12 +126,11 @@ namespace alfi::util::poly {
 		@param a the first polynomial (dividend)
 		@param b the second polynomial (divisor)
 		@param epsilon a threshold for treating coefficients as zero (default is machine epsilon)
-		@param min_r_degree the minimum degree of the remainder polynomial \f(r\f) to continue the loop
+		@param min_r_degree the minimum degree of the remainder polynomial \f(r\f) to be returned
 		@return a tuple {r, s, t} where \f(r = \gcd(a, b)\f) and the Bézout identity \f(a \cdot s + b \cdot t = r\f) holds.
 	*/
 	template <typename Number = DefaultNumber, template <typename, typename...> class Container = DefaultContainer>
-	std::tuple<Container<Number>,Container<Number>,Container<Number>>
-	extended_euclid(
+	std::tuple<Container<Number>,Container<Number>,Container<Number>> extended_euclid(
 			const Container<Number>& a,
 			const Container<Number>& b,
 			Number epsilon = std::numeric_limits<Number>::epsilon(),
