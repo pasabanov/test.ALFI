@@ -71,7 +71,7 @@ void print_polynomial(const std::vector<double>& poly, int precision = 6) {
 	bool first = true;
 	for (size_t i = 0; i < poly.size(); ++i) {
 		const auto coeff = poly[i];
-		if (coeff == 0) {
+		if (coeff == 0 && poly.size() > 1) {
 			continue;
 		}
 
