@@ -20,7 +20,7 @@ namespace alfi::util::poly {
 		if (p.empty()) {
 			return p.push_back(0);
 		}
-		auto p_start = std::find_if(p.begin(), p.end(), [&epsilon](Number v) { return std::abs(v) >= epsilon; });
+		auto p_start = std::find_if(p.begin(), p.end(), [&epsilon](Number v) { return std::abs(v) > epsilon; });
 		if (p_start == p.end()) {
 			--p_start;
 		}
@@ -81,7 +81,7 @@ namespace alfi::util::poly {
 	template <typename Number = DefaultNumber, template <typename, typename...> class Container = DefaultContainer>
 	std::pair<Container<Number>,Container<Number>> div(const Container<Number>& dividend, const Container<Number>& divisor, Number epsilon = std::numeric_limits<Number>::epsilon()) {
 		const auto divisor_start
-			= std::find_if(divisor.begin(), divisor.end(), [&epsilon](Number v) { return std::abs(v) >= epsilon; });
+			= std::find_if(divisor.begin(), divisor.end(), [&epsilon](Number v) { return std::abs(v) > epsilon; });
 
 		if (divisor_start == divisor.end() || dividend.size() < divisor.size()) {
 			return {{}, dividend};
@@ -153,7 +153,7 @@ namespace alfi::util::poly {
 			std::swap(old_t, t);
 		}
 
-		while (!(r.size() == 1 && std::abs(r[0]) < epsilon) && old_r.size() > min_r_degree + 1) {
+		while (!(r.size() == 1 && std::abs(r[0]) <= epsilon) && old_r.size() > min_r_degree + 1) {
 			auto [q, new_r] = div(old_r, r, epsilon);
 
 			const Container<Number> qs = mul(q, s);
