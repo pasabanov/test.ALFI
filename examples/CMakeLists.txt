@@ -1,3 +1,4 @@
 add_subdirectory(dist_gnuplot)
 add_subdirectory(dist_QCustomPlot)
 add_subdirectory(interpolation)
+add_subdirectory(pade)
