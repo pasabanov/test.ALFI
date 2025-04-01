@@ -118,22 +118,20 @@ namespace alfi::ratf {
 		@return A rational function \f(P_n(x) / Q_m(x)\f), or an empty result \f({}, {}\f) if the approximation is not possible.
 	*/
 	template <typename Number = DefaultNumber, template <typename, typename...> class Container = DefaultContainer>
-	RationalFunction<Number,Container> pade(const Container<Number>& P, SizeT n, SizeT m, Number epsilon = std::numeric_limits<Number>::epsilon()) {
+	RationalFunction<Number,Container> pade(Container<Number> P, SizeT n, SizeT m, Number epsilon = std::numeric_limits<Number>::epsilon()) {
 		if (P.size() < n + m + 1) {
-			Container<Number> P1 = P;
-			P1.insert(P1.begin(), n + m + 1 - P.size(), 0);
-			return pade(P1, n, m, epsilon);
+			P.insert(P.begin(), n + m + 1 - P.size(), 0);
 		}
 
 		Container<Number> Xmn1(n + m + 2, 0);
 		Xmn1[0] = 1;
 
-		auto [r, _, t] = util::poly::extended_euclid(Xmn1, P, epsilon, n);
+		auto [r, _, t] = util::poly::extended_euclid(std::move(Xmn1), std::move(P), epsilon, n);
 
 		if (r.size() > n + 1 || t.size() > m + 1) {
 			return {{}, {}};
 		}
 
-		return RationalFunction<Number,Container>(std::move(r), std::move(t));
+		return std::make_pair(r, t);
 	}
 }

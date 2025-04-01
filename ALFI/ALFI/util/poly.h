@@ -131,13 +131,13 @@ namespace alfi::util::poly {
 	*/
 	template <typename Number = DefaultNumber, template <typename, typename...> class Container = DefaultContainer>
 	std::tuple<Container<Number>,Container<Number>,Container<Number>> extended_euclid(
-			const Container<Number>& a,
-			const Container<Number>& b,
+			Container<Number> a,
+			Container<Number> b,
 			Number epsilon = std::numeric_limits<Number>::epsilon(),
 			SizeT min_r_degree = 0
 	) {
-		Container<Number> old_r = a;
-		Container<Number> r = b;
+		Container<Number> old_r = std::move(a);
+		Container<Number> r = std::move(b);
 
 		Container<Number> old_s = {1};
 		Container<Number> s = {0};
