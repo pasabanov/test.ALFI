@@ -97,19 +97,58 @@ namespace alfi::ratf {
 
 	template <typename Number = DefaultNumber, template <typename, typename...> class Container = DefaultContainer>
 	RationalFunction<Number,Container> pade(Container<Number> P, SizeT n, SizeT m, Number epsilon = std::numeric_limits<Number>::epsilon()) {
-		if (P.size() < n + m + 1) {
-			P.insert(P.begin(), n + m + 1 - P.size(), 0);
+		if constexpr (std::is_signed_v<SizeT>) {
+			if (n < 0 || m < 0) {
+				return {{}, {}};
+			}
 		}
 
-		Container<Number> Xmn1(n + m + 2, 0);
-		Xmn1[0] = 1;
+		util::poly::normalize(P);
 
-		auto [r, _, t] = util::poly::extended_euclid(std::move(Xmn1), std::move(P), epsilon, n);
+		Container<Number> Xnm1(n + m + 2, 0);
+		Xnm1[0] = 1;
 
-		if (r.size() > n + 1 || t.size() > m + 1) {
+		// Modified extended Euclidean algorithm `gcd(a,b)=as+bt` without s variable
+		// a = Xnm1
+		// b = P
+		Container<Number> old_r, r, old_t, t;
+		if (Xnm1.size() >= P.size()) {
+			old_r = std::move(Xnm1), r = std::move(P);
+			old_t = {0}, t = {1};
+		} else {
+			old_r = std::move(P), r = std::move(Xnm1);
+			old_t = {1}, t = {0};
+		}
+
+		// `old_r.size()` strictly decreases, except maybe the first iteration
+		// ReSharper disable once CppDFALoopConditionNotUpdated
+		while (old_r.size() > n + 1) {
+			auto [q, new_r] = util::poly::div(old_r, r, epsilon);
+
+			const auto qt = util::poly::mul(q, t);
+			const auto new_t_size = std::max(old_t.size(), qt.size());
+			Container<Number> new_t(new_t_size, 0);
+			for (SizeT i = 0, offset = new_t_size - old_t.size(); i < old_t.size(); ++i) {
+				new_t[offset+i] = old_t[i];
+			}
+			for (SizeT i = 0, offset = new_t_size - qt.size(); i < qt.size(); ++i) {
+				new_t[offset+i] -= qt[i];
+			}
+
+			old_r = std::move(r);
+			r = std::move(new_r);
+			old_t = std::move(t);
+			t = std::move(new_t);
+
+			util::poly::normalize(old_r, epsilon);
+		}
+
+		util::poly::normalize(old_t, epsilon);
+
+		if (old_t.size() > m + 1 || std::abs(old_t[old_t.size()-1]) <= epsilon) {
 			return {{}, {}};
 		}
 
-		return std::make_pair(r, t);
+		return std::make_pair(old_r, old_t);
 	}
 }
