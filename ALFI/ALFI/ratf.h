@@ -126,9 +126,7 @@ namespace alfi::ratf {
 			}
 		}
 
-		if (P.size() < n + m + 1) {
-			P.insert(P.begin(), n + m + 1 - P.size(), 0);
-		}
+		util::poly::normalize(P);
 
 		Container<Number> Xnm1(n + m + 2, 0);
 		Xnm1[0] = 1;
@@ -136,26 +134,21 @@ namespace alfi::ratf {
 		// Modified extended Euclidean algorithm `gcd(a,b)=as+bt` without s variable
 		// a = Xnm1
 		// b = P
-		Container<Number> old_r = std::move(Xnm1);
-		Container<Number> r = std::move(P);
-
-		Container<Number> old_t = {0};
-		Container<Number> t = {1};
-
-		util::poly::normalize(old_r, epsilon);
-		util::poly::normalize(r, epsilon);
-
-		if (old_r.size() < r.size()) {
-			std::swap(old_r, r);
-			std::swap(old_t, t);
+		Container<Number> old_r, r, old_t, t;
+		if (Xnm1.size() >= P.size()) {
+			old_r = std::move(Xnm1), r = std::move(P);
+			old_t = {0}, t = {1};
+		} else {
+			old_r = std::move(P), r = std::move(Xnm1);
+			old_t = {1}, t = {0};
 		}
 
-		// `old_r.size()` strictly decreases
+		// `old_r.size()` strictly decreases, except maybe the first iteration
 		// ReSharper disable once CppDFALoopConditionNotUpdated
 		while (old_r.size() > n + 1) {
 			auto [q, new_r] = util::poly::div(old_r, r, epsilon);
 
-			const Container<Number> qt = util::poly::mul(q, t);
+			const auto qt = util::poly::mul(q, t);
 			const auto new_t_size = std::max(old_t.size(), qt.size());
 			Container<Number> new_t(new_t_size, 0);
 			for (SizeT i = 0, offset = new_t_size - old_t.size(); i < old_t.size(); ++i) {
@@ -171,22 +164,14 @@ namespace alfi::ratf {
 			t = std::move(new_t);
 
 			util::poly::normalize(old_r, epsilon);
-			util::poly::normalize(r, epsilon);
-			util::poly::normalize(old_t, epsilon);
-			util::poly::normalize(t, epsilon);
 		}
 
-		// `old_r.size() <= n + 1` is true
-		if (/*old_r.size() <= n + 1 &&*/ old_t.size() <= m + 1) {
-			return std::make_pair(old_r, old_t);
+		util::poly::normalize(old_t, epsilon);
+
+		if (old_t.size() > m + 1) {
+			return {{}, {}};
 		}
 
-		// seems impossible, but just in case
-		if (r.size() <= n + 1 && t.size() <= m + 1) {
-			return std::make_pair(r, t);
-		}
-
-		// no [n/m] Pade approximation exists
-		return {{}, {}};
+		return std::make_pair(old_r, old_t);
 	}
 }
