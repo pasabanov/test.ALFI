@@ -10,6 +10,18 @@ namespace alfi::util::numeric {
 		return std::abs(a - b) <= epsilon || std::abs(a - b) <= std::max(std::abs(a), std::abs(b)) * epsilon;
 	}
 
+	/**
+		@brief Computes the power of a number using binary exponentiation.
+
+		Calculates \f(x^n\f) in \f(O(\log{n})\f) operations using the binary (exponentiation by squaring) method.
+
+		It supports both signed and unsigned exponent types (@p ExponentType).@n
+		If the exponent is negative, the function computes the reciprocal of the positive exponentiation.
+
+		@param x the base
+		@param n the exponent
+		@return \f(x^n\f)
+	 */
 	template <typename Number, typename ExponentType>
 	Number binpow(Number x, ExponentType n) {
 		if constexpr (std::is_signed_v<ExponentType>) {
