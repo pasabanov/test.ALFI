@@ -127,11 +127,14 @@ int main() {
 	const size_t n = 4, m = 4;
 	const int precision = 8;
 
-	show_pade("e^x", maclaurin_exp(order), n, m, precision);
-	show_pade("sin(x)", maclaurin_sin(order), n, m, precision);
-	show_pade("cos(x)", maclaurin_cos(order), n, m, precision);
-	show_pade("ln(1 + x)", maclaurin_ln(order), n, m, precision);
-	show_pade("arctan(x)", maclaurin_arctan(order), n, m, precision);
+	show_pade("1", {1, 0, 0, 0, 0}, 2, 2, precision);
+	show_pade("2", {1, 0, 0, 0, 0, 0}, 2, 2, precision);
+
+	// show_pade("e^x", maclaurin_exp(order), n, m, precision);
+	// show_pade("sin(x)", maclaurin_sin(order), n, m, precision);
+	// show_pade("cos(x)", maclaurin_cos(order), n, m, precision);
+	// show_pade("ln(1 + x)", maclaurin_ln(order), n, m, precision);
+	// show_pade("arctan(x)", maclaurin_arctan(order), n, m, precision);
 
 	return 0;
 }

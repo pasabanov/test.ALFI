@@ -168,7 +168,7 @@ namespace alfi::ratf {
 
 		util::poly::normalize(old_t, epsilon);
 
-		if (old_t.size() > m + 1) {
+		if (old_t.size() > m + 1 || old_t.empty() || std::abs(old_t[old_t.size()-1]) <= epsilon) {
 			return {{}, {}};
 		}
 
