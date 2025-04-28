@@ -6,7 +6,7 @@
 
 namespace alfi::util::numeric {
 	template <typename Number = DefaultNumber>
-	bool are_equal(Number a, Number b, Number epsilon = std::numeric_limits<Number>::epsilon()) {
+	bool are_equal(const Number& a, const Number& b, const Number& epsilon = std::numeric_limits<Number>::epsilon()) {
 		return std::abs(a - b) <= epsilon || std::abs(a - b) <= std::max(std::abs(a), std::abs(b)) * epsilon;
 	}
 
@@ -23,7 +23,7 @@ namespace alfi::util::numeric {
 		@return \f(x^n\f)
 	 */
 	template <typename Number, typename ExponentType>
-	Number binpow(Number x, ExponentType n) {
+	Number binpow(const Number& x, ExponentType n) {
 		if constexpr (std::is_signed_v<ExponentType>) {
 			if (n < 0) {
 				return 1 / binpow(x, -n);
