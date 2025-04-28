@@ -23,7 +23,7 @@ namespace alfi::util::numeric {
 		@return \f(x^n\f)
 	 */
 	template <typename Number, typename ExponentType>
-	Number binpow(const Number& x, ExponentType n) {
+	Number binpow(Number x, ExponentType n) {
 		if constexpr (std::is_signed_v<ExponentType>) {
 			if (n < 0) {
 				return 1 / binpow(x, -n);
