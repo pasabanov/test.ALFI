@@ -21,3 +21,5 @@ add_bench_executable(bench_step spline/bench_step.cpp)
 add_bench_executable(bench_linear spline/bench_linear.cpp)
 add_bench_executable(bench_quadratic spline/bench_quadratic.cpp)
 add_bench_executable(bench_cubic spline/bench_cubic.cpp)
+
+add_bench_executable(bench_horner horner/bench_horner.cpp)
