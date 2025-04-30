@@ -1,9 +1,0 @@
----------------------------------------------------------------------------------------------------------------------------
-Benchmark                                     Time             CPU   Iterations       1.ME      2.MAE     3.RMSE 4.Variance
----------------------------------------------------------------------------------------------------------------------------
-BM_shift_with_binomials/polynomial:0        357 ns          357 ns      1929798    3.1346k    4.2089k   14.3354k   197.243M
-BM_shift_with_binomials/polynomial:1        111 ns          111 ns      6356623   -1.50794    4.93651    7.51823    55.1249
-BM_shift_with_binomials/polynomial:2        590 ns          590 ns      1156922   117.822k   183.158k   823.191k   667.736G
-BM_shift_with_horner/polynomial:0           134 ns          134 ns      5247479   -61.5159    156.357    349.311   119.179k
-BM_shift_with_horner/polynomial:1          63.3 ns         63.3 ns     10983324   -1.19048    2.33333    3.56571    11.4793
-BM_shift_with_horner/polynomial:2           230 ns          230 ns      3022992    89.7143   3.86855k   13.5304k    184.16M

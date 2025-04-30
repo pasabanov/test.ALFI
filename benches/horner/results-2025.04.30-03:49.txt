@@ -1,0 +1,21 @@
+----------------------------------------------------------------------------------------------------------------------------------------
+Benchmark                                                  Time             CPU   Iterations       1.ME      2.MAE     3.RMSE 4.Variance
+----------------------------------------------------------------------------------------------------------------------------------------
+BM_shift_with_binomials/polynomial:0                    77.0 ns         76.4 ns      8873575    1.33333    1.33333     2.3094    5.33333
+BM_shift_with_binomials/polynomial:1                     131 ns          131 ns      5253414       -7.5        7.5    18.3712      337.5
+BM_shift_with_binomials/polynomial:2                     182 ns          182 ns      3858061       33.5       33.5    94.7523     8.978k
+BM_shift_with_binomials/polynomial:3                     587 ns          586 ns      1189739   49.9324k   49.9324k   114.578k   11.1667G
+BM_shift_with_binomials/polynomial:4                    1063 ns         1063 ns       656904   34.6368M   34.6368M   87.3497M    6.6446P
+BM_shift_with_binomials/polynomial:5                    1703 ns         1703 ns       412871   26.8173G   26.8174G   72.4172G   4.63821Z
+BM_shift_with_binomials_C_predefined/polynomial:0       14.3 ns         14.3 ns     48901460    1.33333    1.33333     2.3094    5.33333
+BM_shift_with_binomials_C_predefined/polynomial:1       23.7 ns         23.7 ns     29533627       -7.5        7.5    18.3712      337.5
+BM_shift_with_binomials_C_predefined/polynomial:2       33.7 ns         33.7 ns     20782688       33.5       33.5    94.7523     8.978k
+BM_shift_with_binomials_C_predefined/polynomial:3        181 ns          181 ns      3872435   49.9324k   49.9324k   114.578k   11.1667G
+BM_shift_with_binomials_C_predefined/polynomial:4        451 ns          451 ns      1560895   34.6368M   34.6368M   87.3497M    6.6446P
+BM_shift_with_binomials_C_predefined/polynomial:5        846 ns          846 ns       832602   26.8173G   26.8174G   72.4172G   4.63821Z
+BM_shift_with_horner/polynomial:0                       15.9 ns         15.9 ns     43878561    1.33333    1.33333     2.3094    5.33333
+BM_shift_with_horner/polynomial:1                       22.8 ns         22.8 ns     30563298       -7.5        7.5    18.3712      337.5
+BM_shift_with_horner/polynomial:2                       28.3 ns         28.3 ns     24830581       33.5       33.5    94.7523     8.978k
+BM_shift_with_horner/polynomial:3                        116 ns          116 ns      6073727   49.9324k   49.9324k   114.578k   11.1667G
+BM_shift_with_horner/polynomial:4                        260 ns          260 ns      2700845   34.6368M   34.6368M   87.3497M    6.6446P
+BM_shift_with_horner/polynomial:5                        489 ns          489 ns      1429297   26.8174G   26.8174G   72.4172G   4.63821Z
