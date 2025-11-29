@@ -1,6 +1,8 @@
 /build/
 /cmake-*/
 
+/CMakeUserPresets.json
+
 /docs/doxygen/html/
 
 /.idea/*

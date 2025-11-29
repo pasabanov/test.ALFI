@@ -51,4 +51,10 @@
 	// Final new line
 	"files.insertFinalNewline": false,
 	"files.trimFinalNewlines": true,
+
+	// PROJECT
+	// CMake
+	"cmake.buildDirectory": "${workspaceFolder}/build/${buildType}",
+	// clangd
+	"clangd.arguments": ["--compile-commands-dir=build/debug"],
 }
