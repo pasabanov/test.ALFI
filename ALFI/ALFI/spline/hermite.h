@@ -90,15 +90,6 @@ namespace alfi::spline {
 				return util::spline::simple_spline<Number,Container>(X, Y, 3);
 			}
 
-			for (SizeT i = 1; i < n; ++i) {
-				if (!(X[i] > X[i-1])) {
-					std::cerr << "Error in function " << __FUNCTION__
-							<< ": X must be strictly increasing. Returning an empty array..."
-							<< std::endl;
-					return {};
-				}
-			}
-
 			/*
 			* Identify the tangent method.
 			*/
@@ -119,43 +110,26 @@ namespace alfi::spline {
 			Number bias;
 			Number continuity;
 
-			Container<Number> explicit_derivatives;
+			const Container<Number>* explicit_derivatives = nullptr;
 
-			std::visit(
-				[&](const auto& t) {
-					using T = std::decay_t<decltype(t)>;
-
-					if constexpr (std::is_same_v<T, typename Types::Classic>) {
-						method = Method::Classic;
-					} else if constexpr (std::is_same_v<T, typename Types::Cardinal>) {
-						method = Method::Cardinal;
-						cardinal_c = t.c;
-					} else if constexpr (std::is_same_v<T, typename Types::CatmullRom>) {
-						method = Method::CatmullRom;
-					} else if constexpr (std::is_same_v<T, typename Types::KochanekBartels>) {
-						method = Method::KochanekBartels;
-						tension = t.tension;
-						bias = t.bias;
-						continuity = t.continuity;
-					} else if constexpr (std::is_same_v<T, typename Types::Akima>) {
-						method = Method::Akima;
-					} else if constexpr (std::is_same_v<T, typename Types::ModifiedAkima>) {
-						method = Method::ModifiedAkima;
-					} else if constexpr (std::is_same_v<T, typename Types::Explicit>) {
-						method = Method::Explicit;
-						explicit_derivatives = t.derivatives;
-					}
-				},
-				type);
+			std::visit(util::misc::overload{
+				[&](const typename Types::Classic&) { method = Method::Classic; },
+				[&](const typename Types::Cardinal& c) { method = Method::Cardinal; cardinal_c = c.c; },
+				[&](const typename Types::CatmullRom&) { method = Method::CatmullRom; },
+				[&](const typename Types::KochanekBartels& kb) { method = Method::KochanekBartels; tension = kb.tension; bias = kb.bias; continuity = kb.continuity; },
+				[&](const typename Types::Akima&) { method = Method::Akima; },
+				[&](const typename Types::ModifiedAkima&) { method = Method::ModifiedAkima; },
+				[&](const typename Types::Explicit& e) { method = Method::Explicit; explicit_derivatives = &e.derivatives; },
+			}, type);
 
 			/*
 			* Explicit derivatives completely override boundary handling.
 			*/
 			if (method == Method::Explicit) {
-				if (explicit_derivatives.size() != n) {
+				if (explicit_derivatives->size() != n) {
 					std::cerr << "Error in function " << __FUNCTION__
 							<< ": Explicit derivatives (of size "
-							<< explicit_derivatives.size()
+							<< explicit_derivatives->size()
 							<< ") and points (of size " << n
 							<< ") are not the same size. Returning an empty array..."
 							<< std::endl;
@@ -177,42 +151,23 @@ namespace alfi::spline {
 			Number clamped_left;
 			Number clamped_right;
 
-			std::visit(
-				[&](const auto& b) {
-					using T = std::decay_t<decltype(b)>;
+			std::visit(util::misc::overload{
+				[&](const typename Boundaries::Linear&) { boundary_method = BoundaryMethod::Linear; },
+				[&](const typename Boundaries::Quadratic&) { boundary_method = BoundaryMethod::Quadratic; polynomial_degree = 2; },
+				[&](const typename Boundaries::Cubic&) { boundary_method = BoundaryMethod::Cubic; polynomial_degree = 3; },
+				[&](const typename Boundaries::Polynomial& p) { boundary_method = BoundaryMethod::Polynomial; polynomial_degree = p.degree; },
+				[&](const typename Boundaries::Clamped& c) { boundary_method = BoundaryMethod::Clamped; clamped_left = c.left; clamped_right = c.right; },
+				[&](const typename Boundaries::Periodic&) { boundary_method = BoundaryMethod::Periodic; },
+			}, boundaries_type);
 
-					if constexpr (std::is_same_v<T, typename Boundaries::Linear>) {
-						boundary_method = BoundaryMethod::Linear;
-					} else if constexpr (std::is_same_v<T, typename Boundaries::Quadratic>) {
-						boundary_method = BoundaryMethod::Quadratic;
-						polynomial_degree = 2;
-					} else if constexpr (std::is_same_v<T, typename Boundaries::Cubic>) {
-						boundary_method = BoundaryMethod::Cubic;
-						polynomial_degree = 3;
-					} else if constexpr (std::is_same_v<T, typename Boundaries::Polynomial>) {
-						boundary_method = BoundaryMethod::Polynomial;
-						polynomial_degree = b.degree;
-					} else if constexpr (std::is_same_v<T, typename Boundaries::Clamped>) {
-						boundary_method = BoundaryMethod::Clamped;
-						clamped_left = b.left;
-						clamped_right = b.right;
-					} else if constexpr (std::is_same_v<T, typename Boundaries::Periodic>) {
-						boundary_method = BoundaryMethod::Periodic;
-					}
-				},
-				boundaries_type);
-
-			/*
-			* Periodic data is represented with the last point duplicated:
-			*
-			*   X[n-1] = X[0] + period
-			*   Y[n-1] = Y[0]
-			*
-			* Therefore there are n - 1 unique points / intervals in one period.
-			*/
 			const bool periodic = boundary_method == BoundaryMethod::Periodic;
 
+			/*
+			* Periodic data is represented with the last point duplicated.
+			* Therefore there are n - 1 unique points / intervals in one period.
+			*/
 			const SizeT period_points = periodic ? n - 1 : n;
+
 			const SizeT interval_count = n - 1;
 
 			/*
@@ -269,19 +224,15 @@ namespace alfi::spline {
 						if (j == r) {
 							continue;
 						}
-
 						Number basis_derivative = 1 / (X[j] - X[r]);
-
 						for (SizeT k = first; k <= last; ++k) {
 							if (k == j || k == r) {
 								continue;
 							}
 							basis_derivative *= (X[r] - X[k]) / (X[j] - X[k]);
 						}
-
 						result += (Y[j] - Y[r]) * basis_derivative;
 					}
-
 					return result;
 				};
 
@@ -354,33 +305,26 @@ namespace alfi::spline {
 				if (periodic) {
 					return periodic_delta(i);
 				}
-
 				if (i >= 0 && i < static_cast<std::ptrdiff_t>(interval_count)) {
 					return delta[static_cast<SizeT>(i)];
 				}
-
 				if (interval_count == 1) {
 					return delta[0];
 				}
-
 				if (i == -1) {
 					return 2 * delta[0] - delta[1];
 				}
-
 				if (i == -2) {
 					const Number d_minus_1 = 2 * delta[0] - delta[1];
 					return 2 * d_minus_1 - delta[0];
 				}
-
 				if (i == static_cast<std::ptrdiff_t>(interval_count)) {
 					return 2 * delta[interval_count-1] - delta[interval_count-2];
 				}
-
 				if (i == static_cast<std::ptrdiff_t>(interval_count) + 1) {
 					const Number d_n = 2 * delta[interval_count-1] - delta[interval_count-2];
 					return 2 * d_n - delta[interval_count-1];
 				}
-
 				/*
 				* Should not be reached for the formulas below.
 				*/
@@ -418,8 +362,8 @@ namespace alfi::spline {
 			*/
 			if (method == Method::Explicit) {
 				for (SizeT i = 0; i < n; ++i) {
-					m_in[i] = explicit_derivatives[i];
-					m_out[i] = explicit_derivatives[i];
+					m_in[i] = (*explicit_derivatives)[i];
+					m_out[i] = (*explicit_derivatives)[i];
 				}
 			} else {
 				const SizeT tangent_count = periodic ? period_points : n;
@@ -459,15 +403,8 @@ namespace alfi::spline {
 							break;
 						}
 						case Method::KochanekBartels: {
-							const Number d_left =
-								periodic
-									? periodic_delta(static_cast<std::ptrdiff_t>(i) - 1)
-									: delta[i-1];
-
-							const Number d_right =
-								periodic
-									? periodic_delta(static_cast<std::ptrdiff_t>(i))
-									: delta[i];
+							const Number d_left = periodic ? periodic_delta(static_cast<std::ptrdiff_t>(i) - 1) : delta[i-1];
+							const Number d_right = periodic ? periodic_delta(static_cast<std::ptrdiff_t>(i)) : delta[i];
 
 							const Number scale = (1 - tension) / 2;
 
