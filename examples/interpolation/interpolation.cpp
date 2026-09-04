@@ -97,6 +97,7 @@ public:
 		{"Linear", alfi::spline::HermiteSpline<>::Boundaries::Linear{}},
 		{"Quadratic", alfi::spline::HermiteSpline<>::Boundaries::Quadratic{}},
 		{"Cubic", alfi::spline::HermiteSpline<>::Boundaries::Cubic{}},
+		{"Polynomial(4)", alfi::spline::HermiteSpline<>::Boundaries::Polynomial{4}},
 		{"Clamped", alfi::spline::HermiteSpline<>::Boundaries::Clamped{10, 0}},
 		{"Periodic", alfi::spline::HermiteSpline<>::Boundaries::Periodic{}},
 	};
