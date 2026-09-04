@@ -17,9 +17,37 @@ namespace alfi::spline {
 				explicit Cardinal(Number c) : c(std::move(c)) {}
 				Number c;
 			};
+			struct CatmullRom final {};
+			struct KochanekBartels final {
+				explicit KochanekBartels(Number tension, Number bias, Number continuity) : tension(std::move(tension)), bias(std::move(bias)), continuity(std::move(continuity)) {}
+				Number tension, bias, continuity;
+			};
+			// struct Pchip final {}; // TODO ?
+			// struct Hyman final {}; // TODO ?
+			// struct Steffen final {}; // TODO ?
 			struct Akima final {};
 			struct ModifiedAkima final {};
+			struct Explicit final {
+				explicit Explicit(Container<Number> derivatives) : derivatives(std::move(derivatives)) {}
+				Container<Number> derivatives;
+			};
 			using Default = Classic;
+		};
+
+		struct Boundary final {
+			struct Linear final {};
+			struct Quadratic final {};
+			struct Cubic final {};
+			struct Polynomial final {
+				explicit Polynomial(SizeT degree) : degree(std::move(degree)) {}
+				SizeT degree;
+			};
+			struct Clamped final {
+				explicit Clamped(Number left, Number right) : left(std::move(left)), right(std::move(right)) {}
+				Number left, right;
+			};
+			struct Periodic final {};
+			using Default = Linear;
 		};
 
 		static Container<Number> compute_coeffs(const Container<Number>& X, const Container<Number>& Y) {
