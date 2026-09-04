@@ -20,10 +20,6 @@ namespace alfi::spline {
 				Number c;
 			};
 			struct CatmullRom final {};
-			struct KochanekBartels final {
-				explicit KochanekBartels(Number tension, Number bias, Number continuity) : tension(std::move(tension)), bias(std::move(bias)), continuity(std::move(continuity)) {}
-				Number tension, bias, continuity;
-			};
 			// struct Pchip final {}; // TODO ?
 			// struct Hyman final {}; // TODO ?
 			// struct Steffen final {}; // TODO ?
@@ -39,7 +35,6 @@ namespace alfi::spline {
 		using Type = std::variant<typename Types::Classic,
 								  typename Types::Cardinal,
 								  typename Types::CatmullRom,
-								  typename Types::KochanekBartels,
 								  // typename Types::Pchip,
 								  // typename Types::Hyman,
 								  // typename Types::Steffen,
@@ -97,7 +92,6 @@ namespace alfi::spline {
 				Classic,
 				Cardinal,
 				CatmullRom,
-				KochanekBartels,
 				Akima,
 				ModifiedAkima,
 				Explicit
@@ -106,9 +100,6 @@ namespace alfi::spline {
 			Method method = Method::Classic;
 
 			Number cardinal_c;
-			Number tension;
-			Number bias;
-			Number continuity;
 
 			const Container<Number>* explicit_derivatives = nullptr;
 
@@ -116,7 +107,6 @@ namespace alfi::spline {
 				[&](const typename Types::Classic&) { method = Method::Classic; },
 				[&](const typename Types::Cardinal& c) { method = Method::Cardinal; cardinal_c = c.c; },
 				[&](const typename Types::CatmullRom&) { method = Method::CatmullRom; },
-				[&](const typename Types::KochanekBartels& kb) { method = Method::KochanekBartels; tension = kb.tension; bias = kb.bias; continuity = kb.continuity; },
 				[&](const typename Types::Akima&) { method = Method::Akima; },
 				[&](const typename Types::ModifiedAkima&) { method = Method::ModifiedAkima; },
 				[&](const typename Types::Explicit& e) { method = Method::Explicit; explicit_derivatives = &e.derivatives; },
@@ -236,16 +226,7 @@ namespace alfi::spline {
 					return result;
 				};
 
-			/*
-			* Tangent arrays.
-			*
-			* m_in[i]  - tangent arriving at point i
-			* m_out[i] - tangent leaving point i
-			*
-			* For every method except Kochanek-Bartels these are identical.
-			*/
-			Container<Number> m_in(n);
-			Container<Number> m_out(n);
+			Container<Number> derivatives(n);
 
 			/*
 			* In periodic mode, coordinates of the wrapped neighbours have to be
@@ -362,8 +343,7 @@ namespace alfi::spline {
 			*/
 			if (method == Method::Explicit) {
 				for (SizeT i = 0; i < n; ++i) {
-					m_in[i] = (*explicit_derivatives)[i];
-					m_out[i] = (*explicit_derivatives)[i];
+					derivatives[i] = (*explicit_derivatives)[i];
 				}
 			} else {
 				const SizeT tangent_count = periodic ? period_points : n;
@@ -377,9 +357,7 @@ namespace alfi::spline {
 						case Method::Classic: {
 							const Number left = periodic ? periodic_delta(static_cast<std::ptrdiff_t>(i) - 1) : delta[i-1];
 							const Number right = periodic ? periodic_delta(static_cast<std::ptrdiff_t>(i)) : delta[i];
-							const Number m = (left + right) / 2;
-							m_in[i] = m;
-							m_out[i] = m;
+							derivatives[i] = (left + right) / 2;
 							break;
 						}
 						case Method::Cardinal: {
@@ -387,9 +365,7 @@ namespace alfi::spline {
 							const Number xn = wrapped_x(static_cast<std::ptrdiff_t>(i) + 1);
 							const Number yp = wrapped_y(static_cast<std::ptrdiff_t>(i) - 1);
 							const Number yn = wrapped_y(static_cast<std::ptrdiff_t>(i) + 1);
-							const Number m = (1 - cardinal_c) * (yn - yp) / (xn - xp);
-							m_in[i] = m;
-							m_out[i] = m;
+							derivatives[i] = (1 - cardinal_c) * (yn - yp) / (xn - xp);
 							break;
 						}
 						case Method::CatmullRom: {
@@ -397,56 +373,14 @@ namespace alfi::spline {
 							const Number xn = wrapped_x(static_cast<std::ptrdiff_t>(i) + 1);
 							const Number yp = wrapped_y(static_cast<std::ptrdiff_t>(i) - 1);
 							const Number yn = wrapped_y(static_cast<std::ptrdiff_t>(i) + 1);
-							const Number m = (yn - yp) / (xn - xp);
-							m_in[i] = m;
-							m_out[i] = m;
-							break;
-						}
-						case Method::KochanekBartels: {
-							const Number d_left = periodic ? periodic_delta(static_cast<std::ptrdiff_t>(i) - 1) : delta[i-1];
-							const Number d_right = periodic ? periodic_delta(static_cast<std::ptrdiff_t>(i)) : delta[i];
-
-							const Number scale = (1 - tension) / 2;
-
-							/*
-							* Incoming tangent DS:
-							*/
-							m_in[i] =
-								scale *
-								(
-									(1 + bias)
-										* (1 - continuity)
-										* d_left
-									+
-									(1 - bias)
-										* (1 + continuity)
-										* d_right
-								);
-
-							/*
-							* Outgoing tangent DD:
-							*/
-							m_out[i] =
-								scale *
-								(
-									(1 + bias)
-										* (1 + continuity)
-										* d_left
-									+
-									(1 - bias)
-										* (1 - continuity)
-										* d_right
-								);
-
+							derivatives[i] = (yn - yp) / (xn - xp);
 							break;
 						}
 						case Method::Akima:
-							m_in[i] = akima_tangent(i, false);
-							m_out[i] = m_in[i];
+							derivatives[i] = akima_tangent(i, false);
 							break;
 						case Method::ModifiedAkima:
-							m_in[i] = akima_tangent(i, true);
-							m_out[i] = m_in[i];
+							derivatives[i] = akima_tangent(i, true);
 							break;
 						case Method::Explicit:
 							__builtin_unreachable();
@@ -459,45 +393,33 @@ namespace alfi::spline {
 				if (!periodic) {
 					switch (boundary_method) {
 						case BoundaryMethod::Linear:
-							m_out[0] = delta[0];
-							m_in[n-1] = delta[n-2];
+							derivatives[0] = delta[0];
+							derivatives[n-1] = delta[n-2];
 							break;
 						case BoundaryMethod::Quadratic:
-							m_out[0] = polynomial_endpoint_derivative(false, 2);
-							m_in[n-1] = polynomial_endpoint_derivative(true, 2);
+							derivatives[0] = polynomial_endpoint_derivative(false, 2);
+							derivatives[n-1] = polynomial_endpoint_derivative(true, 2);
 							break;
 						case BoundaryMethod::Cubic:
-							m_out[0] = polynomial_endpoint_derivative(false, 3);
-							m_in[n-1] = polynomial_endpoint_derivative(true, 3);
+							derivatives[0] = polynomial_endpoint_derivative(false, 3);
+							derivatives[n-1] = polynomial_endpoint_derivative(true, 3);
 							break;
 						case BoundaryMethod::Polynomial:
-							m_out[0] = polynomial_endpoint_derivative(false, polynomial_degree);
-							m_in[n-1] = polynomial_endpoint_derivative(true, polynomial_degree);
+							derivatives[0] = polynomial_endpoint_derivative(false, polynomial_degree);
+							derivatives[n-1] = polynomial_endpoint_derivative(true, polynomial_degree);
 							break;
 						case BoundaryMethod::Clamped:
-							m_out[0] = clamped_left;
-							m_in[n-1] = clamped_right;
+							derivatives[0] = clamped_left;
+							derivatives[n-1] = clamped_right;
 							break;
 						case BoundaryMethod::Periodic:
 							__builtin_unreachable();
-					}
-
-					/*
-					* For ordinary Hermite variants the endpoint has only one
-					* tangent. For KB, only the outgoing tangent at the left
-					* endpoint and incoming tangent at the right endpoint are
-					* relevant.
-					*/
-					if (method != Method::KochanekBartels) {
-						m_in[0] = m_out[0];
-						m_out[n-1] = m_in[n-1];
 					}
 				} else {
 					/*
 					* Duplicate the periodic endpoint.
 					*/
-					m_in[n-1] = m_in[0];
-					m_out[n-1] = m_out[0];
+					derivatives[n-1] = derivatives[0];
 				}
 			}
 
@@ -514,8 +436,8 @@ namespace alfi::spline {
 			for (SizeT i = 0; i < interval_count; ++i) {
 				const Number h = X[i+1] - X[i];
 
-				const Number m0 = m_out[i];
-				const Number m1 = m_in[i+1];
+				const Number m0 = derivatives[i];
+				const Number m1 = derivatives[i+1];
 
 				const Number y0 = Y[i];
 				const Number y1 = Y[i+1];

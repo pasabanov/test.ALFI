@@ -88,7 +88,6 @@ public:
 		{"Classic", alfi::spline::HermiteSpline<>::Types::Classic{}},
 		{"Cardinal", alfi::spline::HermiteSpline<>::Types::Cardinal{0.2}},
 		{"CatmullRom", alfi::spline::HermiteSpline<>::Types::CatmullRom{}},
-		{"KochanekBartels", alfi::spline::HermiteSpline<>::Types::KochanekBartels{1, 2, 3}},
 		{"Akima", alfi::spline::HermiteSpline<>::Types::Akima{}},
 		{"ModifiedAkima", alfi::spline::HermiteSpline<>::Types::ModifiedAkima{}},
 		// No Explicit - X.size() is unknown
