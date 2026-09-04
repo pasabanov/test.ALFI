@@ -85,9 +85,6 @@ namespace alfi::spline {
 				return util::spline::simple_spline<Number,Container>(X, Y, 3);
 			}
 
-			/*
-			* Identify the tangent method.
-			*/
 			enum class Method {
 				Classic,
 				Cardinal,
@@ -99,7 +96,7 @@ namespace alfi::spline {
 
 			Method method = Method::Classic;
 
-			Number cardinal_c;
+			Number cardinal_c {};
 
 			const Container<Number>* explicit_derivatives = nullptr;
 
@@ -118,8 +115,7 @@ namespace alfi::spline {
 			if (method == Method::Explicit) {
 				if (explicit_derivatives->size() != n) {
 					std::cerr << "Error in function " << __FUNCTION__
-							<< ": Explicit derivatives (of size "
-							<< explicit_derivatives->size()
+							<< ": Explicit derivatives (of size " << explicit_derivatives->size()
 							<< ") and points (of size " << n
 							<< ") are not the same size. Returning an empty array..."
 							<< std::endl;
@@ -138,8 +134,8 @@ namespace alfi::spline {
 
 			BoundaryMethod boundary_method = BoundaryMethod::Linear;
 			SizeT polynomial_degree = 1;
-			Number clamped_left;
-			Number clamped_right;
+			Number clamped_left {};
+			Number clamped_right {};
 
 			std::visit(util::misc::overload{
 				[&](const typename Boundaries::Linear&) { boundary_method = BoundaryMethod::Linear; },
@@ -149,14 +145,6 @@ namespace alfi::spline {
 				[&](const typename Boundaries::Clamped& c) { boundary_method = BoundaryMethod::Clamped; clamped_left = c.left; clamped_right = c.right; },
 				[&](const typename Boundaries::Periodic&) { boundary_method = BoundaryMethod::Periodic; },
 			}, boundaries_type);
-
-			const bool periodic = boundary_method == BoundaryMethod::Periodic;
-
-			/*
-			* Periodic data is represented with the last point duplicated.
-			* Therefore there are n - 1 unique points / intervals in one period.
-			*/
-			const SizeT period_points = periodic ? n - 1 : n;
 
 			const SizeT interval_count = n - 1;
 
@@ -218,204 +206,128 @@ namespace alfi::spline {
 			Container<Number> derivatives(n);
 
 			/*
-			* In periodic mode, coordinates of the wrapped neighbours have to be
-			* shifted by +/- period. This matters when X is not uniformly spaced.
-			*/
-			const Number period = periodic ? X[n-1] - X[0] : 0;
-
-			const auto wrapped_index = [&](std::ptrdiff_t i) -> SizeT {
-				const std::ptrdiff_t m = static_cast<std::ptrdiff_t>(period_points);
-
-				i %= m;
-				if (i < 0) {
-					i += m;
-				}
-
-				return static_cast<SizeT>(i);
-			};
-
-			const auto wrapped_x = [&](std::ptrdiff_t i) -> Number {
-				if (!periodic) {
-					return X[static_cast<SizeT>(i)];
-				}
-
-				const std::ptrdiff_t m = static_cast<std::ptrdiff_t>(period_points);
-
-				const std::ptrdiff_t q =
-					i >= 0
-						? i / m
-						: -((-i + m - 1) / m);
-
-				const SizeT j = wrapped_index(i);
-
-				return X[j] + q * period;
-			};
-
-			const auto wrapped_y = [&](std::ptrdiff_t i) -> Number {
-				return Y[wrapped_index(i)];
-			};
-
-			/*
-			* Periodic secant accessor.
-			*/
-			const auto periodic_delta = [&](std::ptrdiff_t i) -> Number {
-				return delta[wrapped_index(i)];
-			};
-
-			/*
-			* Akima's endpoint extension.
-			*
-			* Original Akima uses two extrapolated slopes on each side.
-			* These correspond to quadratic extrapolation of the endpoint slopes.
-			*
-			* For very small data sets there are not enough distinct slopes,
-			* so the available slope is simply continued.
-			*/
-			const auto akima_delta = [&](std::ptrdiff_t i) -> Number {
-				if (periodic) {
-					return periodic_delta(i);
-				}
-				if (i >= 0 && i < static_cast<std::ptrdiff_t>(interval_count)) {
-					return delta[static_cast<SizeT>(i)];
-				}
-				if (interval_count == 1) {
-					return delta[0];
-				}
-				if (i == -1) {
-					return 2 * delta[0] - delta[1];
-				}
-				if (i == -2) {
-					const Number d_minus_1 = 2 * delta[0] - delta[1];
-					return 2 * d_minus_1 - delta[0];
-				}
-				if (i == static_cast<std::ptrdiff_t>(interval_count)) {
-					return 2 * delta[interval_count-1] - delta[interval_count-2];
-				}
-				if (i == static_cast<std::ptrdiff_t>(interval_count) + 1) {
-					const Number d_n = 2 * delta[interval_count-1] - delta[interval_count-2];
-					return 2 * d_n - delta[interval_count-1];
-				}
-				/*
-				* Should not be reached for the formulas below.
-				*/
-				return delta[std::clamp(static_cast<SizeT>(i), static_cast<SizeT>(0), interval_count - 1)];
-			};
-
-			const auto akima_tangent = [&](SizeT i, bool modified) -> Number {
-				const Number d_im2 = akima_delta(static_cast<std::ptrdiff_t>(i) - 2);
-				const Number d_im1 = akima_delta(static_cast<std::ptrdiff_t>(i) - 1);
-				const Number d_i = akima_delta(static_cast<std::ptrdiff_t>(i));
-				const Number d_ip1 = akima_delta(static_cast<std::ptrdiff_t>(i) + 1);
-
-				Number w1 = std::abs(d_ip1 - d_i);
-				Number w2 = std::abs(d_im1 - d_im2);
-
-				if (modified) {
-					w1 += std::abs(d_ip1 + d_i) / 2;
-					w2 += std::abs(d_im1 + d_im2) / 2;
-				}
-
-				const Number w = w1 + w2;
-
-				if (w == 0) {
-					return (d_im1 + d_i) / 2;
-				}
-
-				return (w1 * d_im1 + w2 * d_i) / w;
-			};
-
-			/*
 			* Compute tangents.
 			*
 			* In periodic mode we calculate the unique points 0 ... n-2 and
 			* then copy the tangent(s) of point 0 to point n-1.
 			*/
 			if (method == Method::Explicit) {
-				for (SizeT i = 0; i < n; ++i) {
-					derivatives[i] = (*explicit_derivatives)[i];
-				}
+				derivatives = *explicit_derivatives;
 			} else {
-				const SizeT tangent_count = periodic ? period_points : n;
-
-				for (SizeT i = 0; i < tangent_count; ++i) {
-					if (!periodic && (i == 0 || i == n - 1)) {
-						continue;
-					}
+				const SizeT end = boundary_method == BoundaryMethod::Periodic ? n : n - 1;
+				for (SizeT i = boundary_method == BoundaryMethod::Periodic ? 0 : 1; i < end; ++i) {
+					const SizeT prev_i = i == 0 ? n - 1 : i - 1;
+					const SizeT next_i = i + 1 == n ? 0 : i + 1;
 
 					switch (method) {
 						case Method::Classic: {
-							const Number left = periodic ? periodic_delta(static_cast<std::ptrdiff_t>(i) - 1) : delta[i-1];
-							const Number right = periodic ? periodic_delta(static_cast<std::ptrdiff_t>(i)) : delta[i];
-							derivatives[i] = (left + right) / 2;
+							derivatives[i] = (delta[prev_i] + delta[i]) / 2;
 							break;
 						}
 						case Method::Cardinal: {
-							const Number xp = wrapped_x(static_cast<std::ptrdiff_t>(i) - 1);
-							const Number xn = wrapped_x(static_cast<std::ptrdiff_t>(i) + 1);
-							const Number yp = wrapped_y(static_cast<std::ptrdiff_t>(i) - 1);
-							const Number yn = wrapped_y(static_cast<std::ptrdiff_t>(i) + 1);
-							derivatives[i] = (1 - cardinal_c) * (yn - yp) / (xn - xp);
+							derivatives[i] = (1 - cardinal_c) * (Y[next_i] - Y[prev_i]) / (X[next_i] - X[prev_i]);
 							break;
 						}
 						case Method::CatmullRom: {
-							const Number xp = wrapped_x(static_cast<std::ptrdiff_t>(i) - 1);
-							const Number xn = wrapped_x(static_cast<std::ptrdiff_t>(i) + 1);
-							const Number yp = wrapped_y(static_cast<std::ptrdiff_t>(i) - 1);
-							const Number yn = wrapped_y(static_cast<std::ptrdiff_t>(i) + 1);
-							derivatives[i] = (yn - yp) / (xn - xp);
+							derivatives[i] = (Y[next_i] - Y[prev_i]) / (X[next_i] - X[prev_i]);
 							break;
 						}
 						case Method::Akima:
-							derivatives[i] = akima_tangent(i, false);
+						case Method::ModifiedAkima: {
+							/*
+							* Akima's endpoint extension.
+							*
+							* Original Akima uses two extrapolated slopes on each side.
+							* These correspond to quadratic extrapolation of the endpoint slopes.
+							*
+							* Periodic Akima uses nodes from the opposite end of the array
+							* as neighboring nodes, so no extrapolation is required.
+							*/
+							Number d_im2;
+							Number d_im1;
+							Number d_i;
+							Number d_ip1;
+
+							if (i == 0) {
+								d_im2 = 3 * delta[0] - 2 * delta[1];
+								d_im1 = 2 * delta[0] - delta[1];
+								d_i = delta[0];
+								d_ip1 = delta[1];
+							} else if (i == 1) {
+								d_im2 = delta[0];
+								d_im1 = delta[1];
+								d_i = delta[1];
+								d_ip1 = delta[2];
+							} else if (i == n - 2) {
+								d_im2 = delta[i-2];
+								d_im1 = delta[i-1];
+								d_i = delta[i];
+								d_ip1 = 2 * delta[i] - delta[i-1];
+							} else if (i == n - 1) {
+								d_im2 = delta[i-2];
+								d_im1 = delta[i-1];
+								d_i = 2 * delta[i-1] - delta[i-2];
+								d_ip1 = 3 * delta[i-1] - 2 * delta[i-2];
+							} else {
+								d_im2 = delta[i-2];
+								d_im1 = delta[i-1];
+								d_i = delta[i];
+								d_ip1 = delta[i+1];
+							}
+
+							Number w1 = std::abs(d_ip1 - d_i);
+							Number w2 = std::abs(d_im1 - d_im2);
+
+							if (method == Method::ModifiedAkima) {
+								w1 += std::abs(d_ip1 + d_i) / 2;
+								w2 += std::abs(d_im1 + d_im2) / 2;
+							}
+
+							const Number w = w1 + w2;
+
+							if (w == 0) {
+								derivatives[i] = (d_im1 + d_i) / 2;
+							} else {
+								derivatives[i] = (w1 * d_im1 + w2 * d_i) / w;
+							}
 							break;
-						case Method::ModifiedAkima:
-							derivatives[i] = akima_tangent(i, true);
-							break;
+						}
 						case Method::Explicit:
 							__builtin_unreachable();
 					}
 				}
 
-				/*
-				* Non-periodic endpoint conditions.
-				*/
-				if (!periodic) {
-					switch (boundary_method) {
-						case BoundaryMethod::Linear:
-							derivatives[0] = delta[0];
-							derivatives[n-1] = delta[n-2];
-							break;
-						case BoundaryMethod::Quadratic:
-							derivatives[0] = polynomial_endpoint_derivative(true, 2);
-							derivatives[n-1] = polynomial_endpoint_derivative(false, 2);
-							break;
-						case BoundaryMethod::Cubic:
-							derivatives[0] = polynomial_endpoint_derivative(true, 3);
-							derivatives[n-1] = polynomial_endpoint_derivative(false, 3);
-							break;
-						case BoundaryMethod::Polynomial:
-							derivatives[0] = polynomial_endpoint_derivative(true, polynomial_degree);
-							derivatives[n-1] = polynomial_endpoint_derivative(false, polynomial_degree);
-							break;
-						case BoundaryMethod::Clamped:
-							derivatives[0] = clamped_left;
-							derivatives[n-1] = clamped_right;
-							break;
-						case BoundaryMethod::Periodic:
-							__builtin_unreachable();
-					}
-				} else {
-					/*
-					* Duplicate the periodic endpoint.
-					*/
-					derivatives[n-1] = derivatives[0];
+				switch (boundary_method) {
+					case BoundaryMethod::Linear:
+						derivatives[0] = delta[0];
+						derivatives[n-1] = delta[n-2];
+						break;
+					case BoundaryMethod::Quadratic:
+						derivatives[0] = polynomial_endpoint_derivative(true, 2);
+						derivatives[n-1] = polynomial_endpoint_derivative(false, 2);
+						break;
+					case BoundaryMethod::Cubic:
+						derivatives[0] = polynomial_endpoint_derivative(true, 3);
+						derivatives[n-1] = polynomial_endpoint_derivative(false, 3);
+						break;
+					case BoundaryMethod::Polynomial:
+						derivatives[0] = polynomial_endpoint_derivative(true, polynomial_degree);
+						derivatives[n-1] = polynomial_endpoint_derivative(false, polynomial_degree);
+						break;
+					case BoundaryMethod::Clamped:
+						derivatives[0] = clamped_left;
+						derivatives[n-1] = clamped_right;
+						break;
+					case BoundaryMethod::Periodic:
+						// do nothing
+						break;
 				}
 			}
 
 			/*
 			* Convert every Hermite segment to:
 			*
-			*   S(x) = a * z^3 + b * z^2 + c * z + d
+			* S(x) = a * z^3 + b * z^2 + c * z + d
 			*
 			* where z = x - X[i].
 			*/
