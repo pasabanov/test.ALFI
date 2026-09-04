@@ -175,12 +175,9 @@ namespace alfi::spline {
 			/*
 			* Endpoint derivative obtained by differentiating an interpolating
 			* polynomial through the first/last degree+1 points.
-			*
-			* This is intentionally implemented directly instead of going through
-			* simple_spline(), because here we only need P'(x_endpoint).
 			*/
 			const auto polynomial_endpoint_derivative =
-				[&](bool right, SizeT degree) -> Number {
+				[&](bool left, SizeT degree) -> Number {
 					if (degree == 0) {
 						return 0;
 					}
@@ -191,24 +188,16 @@ namespace alfi::spline {
 						return 0;
 					}
 
-					const SizeT first = right ? n - count : 0;
+					const SizeT first = left ? 0 : n - count;
 					const SizeT last = first + count - 1;
-					const SizeT r = right ? last : first;
+					const SizeT r = left ? first : last;
 
 					Number result = 0;
 
 					/*
 					* Lagrange basis derivative at x_r.
 					*
-					* For j != r:
-					*
-					* L'_j(x_r) =
-					*   1 / (x_j - x_r)
-					*   * product_{k != j,r}
-					*     (x_r - x_k) / (x_j - x_k)
-					*
-					* Since sum_j L_j(x) = 1, the derivative of L_r
-					* is minus the sum of the other basis derivatives.
+					* L'_j(x_r) = 1 / (x_j - x_r) * product_{k != j,r}{(x_r - x_k) / (x_j - x_k)}
 					*/
 					for (SizeT j = first; j <= last; ++j) {
 						if (j == r) {
@@ -397,16 +386,16 @@ namespace alfi::spline {
 							derivatives[n-1] = delta[n-2];
 							break;
 						case BoundaryMethod::Quadratic:
-							derivatives[0] = polynomial_endpoint_derivative(false, 2);
-							derivatives[n-1] = polynomial_endpoint_derivative(true, 2);
+							derivatives[0] = polynomial_endpoint_derivative(true, 2);
+							derivatives[n-1] = polynomial_endpoint_derivative(false, 2);
 							break;
 						case BoundaryMethod::Cubic:
-							derivatives[0] = polynomial_endpoint_derivative(false, 3);
-							derivatives[n-1] = polynomial_endpoint_derivative(true, 3);
+							derivatives[0] = polynomial_endpoint_derivative(true, 3);
+							derivatives[n-1] = polynomial_endpoint_derivative(false, 3);
 							break;
 						case BoundaryMethod::Polynomial:
-							derivatives[0] = polynomial_endpoint_derivative(false, polynomial_degree);
-							derivatives[n-1] = polynomial_endpoint_derivative(true, polynomial_degree);
+							derivatives[0] = polynomial_endpoint_derivative(true, polynomial_degree);
+							derivatives[n-1] = polynomial_endpoint_derivative(false, polynomial_degree);
 							break;
 						case BoundaryMethod::Clamped:
 							derivatives[0] = clamped_left;
