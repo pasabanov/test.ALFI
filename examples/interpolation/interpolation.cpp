@@ -94,6 +94,7 @@ public:
 	};
 	static const inline size_t hermite_spline_default_type_index = 0;
 	static const inline std::vector<std::pair<QString,alfi::spline::HermiteSpline<>::BoundariesType>> hermite_spline_boundaries_types = {
+		{"Inherit", alfi::spline::HermiteSpline<>::Boundaries::Inherit{}},
 		{"Linear", alfi::spline::HermiteSpline<>::Boundaries::Linear{}},
 		{"Quadratic", alfi::spline::HermiteSpline<>::Boundaries::Quadratic{}},
 		{"Cubic", alfi::spline::HermiteSpline<>::Boundaries::Cubic{}},
