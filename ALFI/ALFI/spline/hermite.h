@@ -22,9 +22,10 @@ namespace alfi::spline {
 			struct CatmullRom final {};
 			// struct Pchip final {}; // TODO ?
 			// struct Hyman final {}; // TODO ?
-			// struct Steffen final {}; // TODO ?
 			struct Akima final {};
 			struct ModifiedAkima final {};
+			struct Steffen final {};
+			struct Zero final {};
 			struct Explicit final {
 				explicit Explicit(Container<Number> derivatives) : derivatives(std::move(derivatives)) {}
 				Container<Number> derivatives;
@@ -37,9 +38,10 @@ namespace alfi::spline {
 								  typename Types::CatmullRom,
 								  // typename Types::Pchip,
 								  // typename Types::Hyman,
-								  // typename Types::Steffen,
 								  typename Types::Akima,
 								  typename Types::ModifiedAkima,
+								  typename Types::Steffen,
+								  typename Types::Zero,
 								  typename Types::Explicit>;
 
 		struct Boundaries final {
@@ -173,6 +175,32 @@ namespace alfi::spline {
 						derivatives[n-1] = derivatives[0];
 					}
 				}
+			} else if (std::holds_alternative<typename Types::Steffen>(type)) {
+				// Steffen
+				for (SizeT i = 1; i < n - 1; ++i) {
+					const auto s1 = (delta[i-1] > 0) - (delta[i-1] < 0), s2 = (delta[i] > 0) - (delta[i] < 0);
+					const Number hi_1 = X[i] - X[i-1], hi = X[i+1] - X[i];
+					derivatives[i] = (s1 + s2) * std::min({std::abs(delta[i-1]), std::abs(delta[i]), std::abs((delta[i-1] * hi_1 + delta[i] * hi) / (hi_1 + hi) / 2)});
+				}
+				if (std::holds_alternative<typename Boundaries::Inherit>(boundaries_type)) {
+					if (n == 2) {
+						derivatives[0] = derivatives[1] = delta[0];
+					} else {
+						const Number p1 = delta[0] * (1 + (X[1] - X[0]) / (X[2] - X[0])) - delta[1] * ((X[1] - X[0]) / (X[2] - X[0]));
+						const auto s1 = (delta[0] > 0) - (delta[0] < 0), s2 = (p1 > 0) - (p1 < 0);
+						derivatives[0] = (s1 + s2) * std::min(std::abs(delta[0]), std::abs(p1 / 2));
+						const Number pn = delta[n-2] * (1 + (X[n-1] - X[n-2]) / (X[n-1] - X[n-3])) - delta[n-3] * ((X[n-1] - X[n-2]) / (X[n-1] - X[n-3]));
+						const auto s3 = (delta[n-2] > 0) - (delta[n-2] < 0), s4 = (pn > 0) - (pn < 0);
+						derivatives[n-1] = (s3 + s4) * std::min(std::abs(delta[n-2]), std::abs(pn / 2));
+					}
+				} else if (std::holds_alternative<typename Boundaries::Periodic>(boundaries_type)) {
+					const auto sn_2 = (delta[n-2] > 0) - (delta[n-2] < 0), s0 = (delta[0] > 0) - (delta[0] < 0);
+					const Number hn_2 = X[n-1] - X[n-2], h0 = X[1] - X[0];
+					derivatives[0] = derivatives[n-1] = (sn_2 + s0) * std::min({std::abs(delta[n-2]), std::abs(delta[0]), std::abs((delta[n-2] * hn_2 + delta[0] * h0) / (hn_2 + h0) / 2)});
+				}
+			} else if (std::holds_alternative<typename Types::Zero>(type)) {
+				// Zero
+				std::fill(derivatives.begin(), derivatives.end(), 0);
 			} else if (const auto* expl = std::get_if<typename Types::Explicit>(&type)) {
 				// Explicit
 				if (expl->derivatives.size() != n) {
@@ -184,8 +212,6 @@ namespace alfi::spline {
 					return {};
 				}
 				derivatives = expl->derivatives;
-			} else {
-				throw std::runtime_error{"Unexpected type"};
 			}
 
 			const auto polynomial_endpoint_derivative =
@@ -193,7 +219,7 @@ namespace alfi::spline {
 					if (degree == 0) {
 						return 0;
 					}
-					const SizeT count = std::min<SizeT>(degree + 1, n);
+					const SizeT count = std::min(degree + 1, n);
 					if (count < 2) {
 						return 0;
 					}

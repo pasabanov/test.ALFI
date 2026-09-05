@@ -90,6 +90,8 @@ public:
 		{"CatmullRom", alfi::spline::HermiteSpline<>::Types::CatmullRom{}},
 		{"Akima", alfi::spline::HermiteSpline<>::Types::Akima{}},
 		{"ModifiedAkima", alfi::spline::HermiteSpline<>::Types::ModifiedAkima{}},
+		{"Steffen", alfi::spline::HermiteSpline<>::Types::Steffen{}},
+		{"Zero", alfi::spline::HermiteSpline<>::Types::Zero{}},
 		// No Explicit - X.size() is unknown
 	};
 	static const inline size_t hermite_spline_default_type_index = 0;
