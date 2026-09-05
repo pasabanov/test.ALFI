@@ -102,6 +102,8 @@ namespace alfi::spline {
 			/**
 				The first derivative is periodic: the derivatives at the first and last points are equal,
 				and periodic neighbors are used when estimating boundary derivatives.
+
+				Has no effect when used with `Types::Explicit`.
 			 */
 			struct Periodic final {};
 			using Default = Inherit;
@@ -200,11 +202,13 @@ namespace alfi::spline {
 					} else {
 						const Number delta_n_2 = 3 * delta[0] - 2 * delta[1];
 						const Number delta_n_1 = 2 * delta[0] - delta[1];
-						derivatives[0] = akima(delta_n_2, delta_n_1, delta[0], delta[1]);
-						derivatives[1] = akima(delta_n_1, delta[0], delta[1], delta[2]);
 						const Number delta_0 = 2 * delta[n-2] - delta[n-3];
 						const Number delta_1 = 3 * delta[n-2] - 2 * delta[n-3];
-						if (n != 3) {
+						derivatives[0] = akima(delta_n_2, delta_n_1, delta[0], delta[1]);
+						if (n == 3) {
+							derivatives[1] = akima(delta_n_1, delta[0], delta[1], delta_0);
+						} else {
+							derivatives[1] = akima(delta_n_1, delta[0], delta[1], delta[2]);
 							derivatives[n-2] = akima(delta[n-4], delta[n-3], delta[n-2], delta_0);
 						}
 						derivatives[n-1] = akima(delta[n-3], delta[n-2], delta_0, delta_1);
