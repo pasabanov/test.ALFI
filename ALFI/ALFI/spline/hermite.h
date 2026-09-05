@@ -323,6 +323,7 @@ namespace alfi::spline {
 
 			for (SizeT i = 0; i < interval_count; ++i) {
 				const Number h = X[i+1] - X[i];
+				const Number h2 = h * h;
 
 				const Number m0 = derivatives[i];
 				const Number m1 = derivatives[i+1];
@@ -330,13 +331,10 @@ namespace alfi::spline {
 				const Number y0 = Y[i];
 				const Number y1 = Y[i+1];
 
-				const Number h2 = h * h;
-				const Number h3 = h2 * h;
+				const Number s = (y1 - y0) / h;
 
-				const Number a = (2 * y0 - 2 * y1 + h * (m0 + m1)) / h3;
-
-				const Number b = (-3 * y0 + 3 * y1 - h * (2 * m0 + m1)) / h2;
-
+				const Number a = (m0 + m1 - 2 * s) / h2;
+				const Number b = (3 * s - 2 * m0 - m1) / h;
 				const Number c = m0;
 				const Number d = y0;
 
