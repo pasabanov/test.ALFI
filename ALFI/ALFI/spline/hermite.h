@@ -15,7 +15,7 @@ namespace alfi::spline {
 	public:
 		struct Types final {
 			/**
-				Known as "Finite difference".
+				Known as "Finite difference".\n
 				One-sided secant derivatives at the end points and arithmetic mean of adjacent secants at interior points.
 			 */
 			struct Classic final {};
@@ -333,15 +333,10 @@ namespace alfi::spline {
 
 				const Number s = (y1 - y0) / h;
 
-				const Number a = (m0 + m1 - 2 * s) / h2;
-				const Number b = (3 * s - 2 * m0 - m1) / h;
-				const Number c = m0;
-				const Number d = y0;
-
-				coeffs[4*i+0] = a;
-				coeffs[4*i+1] = b;
-				coeffs[4*i+2] = c;
-				coeffs[4*i+3] = d;
+				coeffs[4*i+0] = (m0 + m1 - 2 * s) / h2;
+				coeffs[4*i+1] = (3 * s - 2 * m0 - m1) / h;
+				coeffs[4*i+2] = m0;
+				coeffs[4*i+3] = y0;
 			}
 
 			return coeffs;
