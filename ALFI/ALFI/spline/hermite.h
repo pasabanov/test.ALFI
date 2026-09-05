@@ -14,18 +14,44 @@ namespace alfi::spline {
 	class HermiteSpline {
 	public:
 		struct Types final {
+			/**
+				Known as "Finite difference".
+				One-sided secant derivatives at the end points and arithmetic mean of adjacent secants at interior points.
+			 */
 			struct Classic final {};
+			/**
+				Cardinal spline, sometimes called a canonical spline, with tension parameter `c`.\n
+				The derivative at each point is `(1-c)` times the slope of the chord between adjacent points.
+			 */
 			struct Cardinal final {
 				explicit Cardinal(Number c) : c(std::move(c)) {}
 				Number c;
 			};
+			/**
+				Cardinal spline with tension parameter `c = 0`.\n
+				This implementation is suitable for non-uniformly distributed points.
+			 */
 			struct CatmullRom final {};
-			// struct Pchip final {}; // TODO ?
-			// struct Hyman final {}; // TODO ?
+			/**
+				Akima interpolation, using weighted averages of neighboring secant derivatives.
+			 */
 			struct Akima final {};
+			/**
+				Modified Akima interpolation with additional weights that reduce overshoot on flat data.
+			 */
 			struct ModifiedAkima final {};
+			/**
+				Monotonicity-preserving cubic interpolation using Steffen's derivative estimates.
+			 */
 			struct Steffen final {};
+			/**
+				Zero first derivatives at all points.\n
+				Each segment is monotonic between its end points.
+			 */
 			struct Zero final {};
+			/**
+				Explicitly specified first derivatives at all points.
+			 */
 			struct Explicit final {
 				explicit Explicit(Container<Number> derivatives) : derivatives(std::move(derivatives)) {}
 				Container<Number> derivatives;
@@ -36,8 +62,6 @@ namespace alfi::spline {
 		using Type = std::variant<typename Types::Classic,
 								  typename Types::Cardinal,
 								  typename Types::CatmullRom,
-								  // typename Types::Pchip,
-								  // typename Types::Hyman,
 								  typename Types::Akima,
 								  typename Types::ModifiedAkima,
 								  typename Types::Steffen,
@@ -45,18 +69,40 @@ namespace alfi::spline {
 								  typename Types::Explicit>;
 
 		struct Boundaries final {
+			/**
+				Use the boundary behavior defined by the spline type.
+			 */
 			struct Inherit final {};
+			/**
+				The first derivative at each end point equals the slope of the adjacent segment.
+			 */
 			struct Linear final {};
+			/**
+				The first derivative at each end point is obtained from a quadratic interpolating polynomial.
+			 */
 			struct Quadratic final {};
+			/**
+				The first derivative at each end point is obtained from a cubic interpolating polynomial.
+			 */
 			struct Cubic final {};
+			/**
+				The first derivative at each end point is obtained from an interpolating polynomial of the specified degree.
+			 */
 			struct Polynomial final {
 				explicit Polynomial(SizeT degree) : degree(std::move(degree)) {}
 				SizeT degree;
 			};
+			/**
+				The first derivative equals `left` at the first point and `right` at the last point.
+			 */
 			struct Clamped final {
 				explicit Clamped(Number left, Number right) : left(std::move(left)), right(std::move(right)) {}
 				Number left, right;
 			};
+			/**
+				The first derivative is periodic: the derivatives at the first and last points are equal,
+				and periodic neighbors are used when estimating boundary derivatives.
+			 */
 			struct Periodic final {};
 			using Default = Inherit;
 		};
