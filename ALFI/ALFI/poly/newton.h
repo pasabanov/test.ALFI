@@ -7,6 +7,29 @@
 
 namespace alfi::poly {
 	template <typename Number = DefaultNumber, template <typename, typename...> class Container = DefaultContainer>
+	Container<Number> newton_finate_diffs(const Container<Number>& X, const Container<Number>& Y) {
+		if (X.size() != Y.size()) {
+			std::cerr << "Error in function " << __FUNCTION__
+					  << ": Vectors X (of size " << X.size()
+					  << ") and Y (of size " << Y.size()
+					  << ") are not the same size. Returning {NAN}..." << std::endl;
+			return {NAN};
+		}
+
+		const auto N = X.size();
+
+		Container<Number> F = Y;
+
+		for (SizeT i = 1; i < N; ++i) {
+			for (SizeT j = N - 1; j >= i; --j) {
+				F[j] = (F[j] - F[j-1]) / (X[j] - X[j-i]);
+			}
+		}
+
+		return F;
+	}
+
+	template <typename Number = DefaultNumber, template <typename, typename...> class Container = DefaultContainer>
 	Container<Number> newton(const Container<Number>& X, const Container<Number>& Y) {
 		if (X.size() != Y.size()) {
 			std::cerr << "Error in function " << __FUNCTION__
@@ -24,13 +47,7 @@ namespace alfi::poly {
 
 		const auto N = X.size();
 
-		Container<Number> F = Y;
-
-		for (SizeT i = 1; i < N; ++i) {
-			for (SizeT j = N - 1; j >= i; --j) {
-				F[j] = (F[j] - F[j-1]) / (X[j] - X[j-i]);
-			}
-		}
+		const Container<Number> F = newton_finate_diffs(X, Y);
 
 		Container<Number> P(N);
 		std::fill(P.begin(), P.end() - 1, 0);
@@ -57,5 +74,10 @@ namespace alfi::poly {
 		}
 
 		return P;
+	}
+
+	template <typename Number = DefaultNumber, template <typename, typename...> class Container = DefaultContainer>
+	void newton_append(Container<Number>& diffs, Container<Number>& polynomial, const Number& x, const Number& y) {
+		
 	}
 }
